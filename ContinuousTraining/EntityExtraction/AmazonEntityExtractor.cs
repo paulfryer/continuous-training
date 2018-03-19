@@ -13,6 +13,8 @@ namespace ContinuousTraining.EntityExtraction
         {
             private static readonly IAmazonComprehend Comprehend = new AmazonComprehendClient();
 
+            public string ProviderCode => "AMZN";
+
             public async Task<List<ExtractedEntity>> ExtractEntitiesAsync(string text)
             {
                 var entities = new List<ExtractedEntity>();

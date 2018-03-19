@@ -14,7 +14,7 @@ namespace ContinuousTraining.EntityExtraction
         public class GoogleEntityExtractor : IEntityExtractor
         {
             private readonly IAmazonSimpleSystemsManagement ssm = new AmazonSimpleSystemsManagementClient();
-
+            public string ProviderCode => "GOOG";
             public GoogleEntityExtractor()
             {
                 var getParameter = ssm.GetParameterAsync(new GetParameterRequest

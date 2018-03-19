@@ -15,7 +15,7 @@ namespace ContinuousTraining.EntityExtraction
         {
             private const string KeyPhrasesApiEndpoint =
                 "https://westus2.api.cognitive.microsoft.com/text/analytics/v2.0/keyPhrase";
-
+            public string ProviderCode => "MSFT";
             private readonly IAmazonSimpleSystemsManagement ssm = new AmazonSimpleSystemsManagementClient();
 
             public MicrosoftEntityExtractor()
