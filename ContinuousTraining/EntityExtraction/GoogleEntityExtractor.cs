@@ -19,7 +19,7 @@ namespace ContinuousTraining.EntityExtraction
             {
                 var getParameter = ssm.GetParameterAsync(new GetParameterRequest
                 {
-                    Name = "GoogleApiKey",
+                    Name = "/CT/GoogleApiKey",
                     WithDecryption = true
                 });
                 GoogleApiKey = getParameter.Result.Parameter.Value;

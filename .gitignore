@@ -5,3 +5,5 @@
 /.vs
 /ContinuousTraining/bin/Debug/netcoreapp2.0
 /ContinuousTraining/obj
+/Tests/bin/Debug/netcoreapp2.0
+/Tests/obj

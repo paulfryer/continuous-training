@@ -22,7 +22,7 @@ namespace ContinuousTraining.EntityExtraction
             {
                 var getParameter = ssm.GetParameterAsync(new GetParameterRequest
                 {
-                    Name = "MicrosoftApimSubscriptionKey",
+                    Name = "/CT/MicrosoftApimSubscriptionKey",
                     WithDecryption = true
                 });
                 MicrosoftApimSubscriptionKey = getParameter.Result.Parameter.Value;

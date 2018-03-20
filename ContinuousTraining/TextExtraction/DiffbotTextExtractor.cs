@@ -15,7 +15,7 @@ namespace ContinuousTraining.TextExtraction
         {
             var getParameter = ssm.GetParameterAsync(new GetParameterRequest
             {
-                Name = "DiffbotToken",
+                Name = "/CT/DiffbotToken",
                 WithDecryption = true
             });
             DiffbotToken = getParameter.Result.Parameter.Value;
