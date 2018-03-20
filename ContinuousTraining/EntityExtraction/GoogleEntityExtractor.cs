@@ -64,7 +64,7 @@ namespace ContinuousTraining.EntityExtraction
                         if (decimal.TryParse((string) e.salience, out _))
                             entities.Add(
                                 new ExtractedEntity((string) e.name,
-                                    (string) e.type, Convert.ToInt32(10000 * Convert.ToDecimal((string) e.salience))));
+                                    (string) e.type, Convert.ToInt32(10000 * Convert.ToDecimal((string) e.salience)),ProviderCode));
                 }
 
                 return entities;

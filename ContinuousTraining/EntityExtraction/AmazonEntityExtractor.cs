@@ -48,7 +48,8 @@ namespace ContinuousTraining.EntityExtraction
                     {
                         Name = e.Text,
                         Type = e.Type.Value,
-                        Score = Convert.ToInt32(10000 * Convert.ToDecimal(decimalValue))
+                        Score = Convert.ToInt32(10000 * Convert.ToDecimal(decimalValue)),
+                        Provider = this.ProviderCode
                     };
 
                     entities.Add(entity);

@@ -80,7 +80,7 @@ namespace ContinuousTraining.EntityExtraction
                     foreach (var doc in response.documents)
                     foreach (var phrase in doc.keyPhrases)
                         entities.Add(new ExtractedEntity((string) phrase, "PHRASE",
-                            Convert.ToInt32(10000 * Convert.ToDecimal(1))));
+                            Convert.ToInt32(10000 * Convert.ToDecimal(1)), ProviderCode));
                 }
 
                 return entities;

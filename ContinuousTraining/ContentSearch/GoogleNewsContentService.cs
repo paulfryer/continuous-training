@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
 using System.Text.RegularExpressions;
@@ -10,7 +11,10 @@ namespace ContinuousTraining.ContentSearch
     {
         public async Task<SearchResult> GetLinksAsync(string searchTerm, DateTime date, int startIndex)
         {
-            var response = new SearchResult();
+            var response = new SearchResult
+            {
+                Links = new List<Uri>()
+            };
 
             var startPattern = date.ToString("MM/dd/yyyy");
             var searchUrl =

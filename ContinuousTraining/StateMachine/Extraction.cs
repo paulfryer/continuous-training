@@ -12,6 +12,8 @@ using Amazon.Comprehend.Model;
 using Amazon.KinesisFirehose;
 using Amazon.KinesisFirehose.Model;
 using ContinuousTraining.ContentSearch;
+using ContinuousTraining.EntityExtraction;
+using ContinuousTraining.EntityExtraction.ContinuousTraining.EntityExtractors;
 using ContinuousTraining.TextExtraction;
 using DotStep.Core;
 using Newtonsoft.Json;
@@ -49,7 +51,7 @@ namespace ContinuousTraining.StateMachine
         {
             public override List<Choice> Choices => new List<Choice>
             {
-                new Choice<WaitBetweenPageGrabs, Context>(c => c.HasMoreResults)
+                new Choice<WaitBetweenPageGrabs, Context>(c => c.HasMoreResults == true)
             };
         }
 
@@ -74,6 +76,8 @@ namespace ContinuousTraining.StateMachine
                 {
                     var result =
                         await contentService.GetLinksAsync(context.SearchTerm, context.SearchDate, context.StartIndex);
+
+                    context.Results = result.Links.Select(l => l.ToString()).ToList();
                 }
                 catch (Exception)
                 {
@@ -98,7 +102,7 @@ namespace ContinuousTraining.StateMachine
         {
             public override List<Choice> Choices => new List<Choice>
             {
-                new Choice<ExtractContent, Context>(c => c.MoreResultsToProcess)
+                new Choice<ExtractContent, Context>(c => c.MoreResultsToProcess == true)
             };
         }
 
@@ -130,8 +134,12 @@ namespace ContinuousTraining.StateMachine
         [DotStep.Core.Action(ActionName = "dynamodb:*")]
         public sealed class ExtractEntities : TaskState<Context, CheckForMoreResultsToProcess>
         {
-            private readonly IAmazonComprehend comprehend = new AmazonComprehendClient();
             private readonly IAmazonKinesisFirehose firehose = new AmazonKinesisFirehoseClient();
+
+            private readonly List<IEntityExtractor> entityExtractors = new List<IEntityExtractor>
+            {
+                new AmazonEntityExtractor()
+            };
 
             public override async Task<Context> Execute(Context context)
             {
@@ -141,49 +149,29 @@ namespace ContinuousTraining.StateMachine
                     return context;
                 }
 
-                var tasks = new List<Task>();
-                var text = context.Text;
-                const int maxBytesPerRequest = 5000;
-                const int bytesPerCharacter = 2;
-                const int maxTextSize = maxBytesPerRequest / bytesPerCharacter;
-                var textList = new List<string>();
-                var documents = new List<dynamic>();
-                var index = 1;
-                while (text.Length > 0)
-                {
-                    var length = text.Length > maxTextSize ? maxTextSize : text.Length;
-                    var textPart = text.Substring(0, length);
-                    textList.Add(textPart);
-                    documents.Add(new
-                    {
-                        language = "en",
-                        id = $"{index}",
-                        text = textPart
-                    });
-                    text = text.Remove(0, length);
-                    index++;
-                }
+                var extractionTasks = new List<Task<List<ExtractedEntity>>>();
+               
+                foreach (var entityExtractor in entityExtractors)
+                    extractionTasks.Add(entityExtractor.ExtractEntitiesAsync(context.Text));
 
-                var detectionResult = await comprehend.BatchDetectEntitiesAsync(new BatchDetectEntitiesRequest
-                {
-                    LanguageCode = LanguageCode.En,
-                    TextList = textList
-                });
-                context.Entities = detectionResult.ResultList;
+                await Task.WhenAll(extractionTasks);
+
+                var item = new Dictionary<string, int>();
                 var records = new List<Record>();
                 context.UrlMd5 = CalculateMd5Hash(context.Url);
-                var item = new Dictionary<string, int>();
-                foreach (var t in detectionResult.ResultList)
-                foreach (var e in t.Entities)
+                foreach (var extractionTask in extractionTasks)
+                foreach (var entity in extractionTask.Result)
                 {
-                    AddRecord(records, context.SearchTerm, context.IndexTime, "AMZN", context.UrlMd5, e.Type.Value,
-                        e.Text, e.Score);
-                    if (!decimal.TryParse(Convert.ToString(e.Score, CultureInfo.InvariantCulture),
+                    AddRecord(records, context.SearchTerm, context.IndexTime, entity.Provider, context.UrlMd5,
+                        entity.Type, entity.Name, entity.Score);
+                    if (!decimal.TryParse(Convert.ToString(entity.Score, CultureInfo.InvariantCulture),
                         out var decimalValue)) continue;
-                    var name = MakeAttributeName("AMZN", e.Type.Value, e.Text);
+                    var name = MakeAttributeName(entity.Provider, entity.Type, entity.Name);
                     item[name] = Convert.ToInt32(10000 * Convert.ToDecimal(decimalValue));
                 }
 
+
+                var firehoseTasks = new List<Task>();
                 const int maxRecordsPerBatch = 100;
                 while (records.Count > 0)
                 {
@@ -195,7 +183,7 @@ namespace ContinuousTraining.StateMachine
                         DeliveryStreamName = "tiger",
                         Records = recordSet
                     });
-                    tasks.Add(firehoseTask);
+                    firehoseTasks.Add(firehoseTask);
                     records.RemoveRange(0, recordsToTake);
                 }
 
@@ -213,8 +201,8 @@ namespace ContinuousTraining.StateMachine
                         Data = GenerateStreamFromString(itemJson)
                     }
                 });
-                tasks.Add(itemFirehoseTask);
-                await Task.WhenAll(tasks);
+                firehoseTasks.Add(itemFirehoseTask);
+                await Task.WhenAll(extractionTasks);
                 context.Entities = null;
                 return context;
             }
