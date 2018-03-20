@@ -13,6 +13,7 @@
     <PackageReference Include="AWSSDK.SageMaker" Version="3.3.3" />
     <PackageReference Include="AWSSDK.SimpleSystemsManagement" Version="3.3.17.2" />
     <PackageReference Include="AWSSDK.StepFunctions" Version="3.3.2.2" />
+    <PackageReference Include="DotStep.Builder" Version="2.0.0" />
     <PackageReference Include="DotStep.Core" Version="2.0.0" />
     <PackageReference Include="Newtonsoft.Json" Version="11.0.1" />
   </ItemGroup>

@@ -1,0 +1,15 @@
+version: 0.1
+phases:
+  build:
+    commands:
+      - dotnet restore ContinuousTraining
+      - dotnet publish -c release ContinuousTraining
+  post_build:
+    commands:
+      - dotnet restore Builder
+      - dotnet publish -c release Builder
+      - dotnet Builder/bin/release/netcoreapp2.0/publish/Builder.dll Builder/bin/release
+artifacts:
+  files:
+    - ContinuousTraining/bin/release/netcoreapp2.0/publish/**/*
+  discard-paths: yes
