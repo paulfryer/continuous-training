@@ -18,7 +18,13 @@ namespace ContinuousTraining.EntityExtraction
             public string ProviderCode => "MSFT";
             private readonly IAmazonSimpleSystemsManagement ssm = new AmazonSimpleSystemsManagementClient();
 
-            public MicrosoftEntityExtractor()
+           
+
+            private static string MicrosoftApimSubscriptionKey { get; set; }
+
+            public async Task<List<ExtractedEntity>> ExtractEntitiesAsync(string text)
+            {
+            if (MicrosoftApimSubscriptionKey == null)
             {
                 var getParameter = ssm.GetParameterAsync(new GetParameterRequest
                 {
@@ -28,10 +34,6 @@ namespace ContinuousTraining.EntityExtraction
                 MicrosoftApimSubscriptionKey = getParameter.Result.Parameter.Value;
             }
 
-            private string MicrosoftApimSubscriptionKey { get; }
-
-            public async Task<List<ExtractedEntity>> ExtractEntitiesAsync(string text)
-            {
                 var entities = new List<ExtractedEntity>();
 
                 const int maxBytesPerRequest = 5000;

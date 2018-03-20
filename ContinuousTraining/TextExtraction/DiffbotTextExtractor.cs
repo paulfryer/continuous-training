@@ -11,20 +11,22 @@ namespace ContinuousTraining.TextExtraction
     {
         private readonly IAmazonSimpleSystemsManagement ssm = new AmazonSimpleSystemsManagementClient();
 
-        public DiffbotTextExtractor()
-        {
-            var getParameter = ssm.GetParameterAsync(new GetParameterRequest
-            {
-                Name = "/CT/DiffbotToken",
-                WithDecryption = true
-            });
-            DiffbotToken = getParameter.Result.Parameter.Value;
-        }
+    
 
         private static string DiffbotToken { get; set; }
 
         public async Task<string> ExtractText(Uri url)
         {
+            if (DiffbotToken == null)
+            {
+                var getParameter = ssm.GetParameterAsync(new GetParameterRequest
+                {
+                    Name = "/CT/DiffbotToken",
+                    WithDecryption = true
+                });
+                DiffbotToken = getParameter.Result.Parameter.Value;
+            }
+
             using (var httpClient = new HttpClient())
             {
                 var encodedUrl = Uri.EscapeDataString(url.ToString());

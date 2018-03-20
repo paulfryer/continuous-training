@@ -15,17 +15,8 @@ namespace ContinuousTraining.EntityExtraction
         {
             private readonly IAmazonSimpleSystemsManagement ssm = new AmazonSimpleSystemsManagementClient();
             public string ProviderCode => "GOOG";
-            public GoogleEntityExtractor()
-            {
-                var getParameter = ssm.GetParameterAsync(new GetParameterRequest
-                {
-                    Name = "/CT/GoogleApiKey",
-                    WithDecryption = true
-                });
-                GoogleApiKey = getParameter.Result.Parameter.Value;
-            }
 
-            private string GoogleApiKey { get; }
+            private static string GoogleApiKey { get; set; }
 
             private string EntitySentimentApiEndpoint =>
                 $"https://language.googleapis.com/v1beta2/documents:analyzeEntitySentiment?key={GoogleApiKey}";
@@ -33,6 +24,17 @@ namespace ContinuousTraining.EntityExtraction
 
             public async Task<List<ExtractedEntity>> ExtractEntitiesAsync(string text)
             {
+                if (GoogleApiKey == null)
+                {
+                    var getParameter = ssm.GetParameterAsync(new GetParameterRequest
+                    {
+                        Name = "/CT/GoogleApiKey",
+                        WithDecryption = true
+                    });
+                    GoogleApiKey = getParameter.Result.Parameter.Value;
+                }
+
+
                 var entities = new List<ExtractedEntity>();
 
                 using (var httpClient = new HttpClient())
