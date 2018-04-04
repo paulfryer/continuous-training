@@ -30,7 +30,7 @@ namespace ContinuousTraining.StateMachine
         {
             public override List<Choice> Choices => new List<Choice>
             {
-                new Choice<SubmitIndexingJob, Context>(c => c.HasMoreDatesToIndex)
+                new Choice<SubmitIndexingJob, Context>(c => c.HasMoreDatesToIndex == true)
             };
         }
 

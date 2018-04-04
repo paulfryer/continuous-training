@@ -184,7 +184,7 @@ namespace ContinuousTraining.StateMachine
             public override List<Choice> Choices => new List<Choice>
             {
                 new Choice<CreateEndpoint, Context>(c => c.EndpointExists == false),
-                new Choice<UpdateEndpoint, Context>(c => c.EndpointExists)
+                new Choice<UpdateEndpoint, Context>(c => c.EndpointExists == true)
             };
         }
 
