@@ -45,6 +45,8 @@ namespace ContinuousTraining.StateMachine
             public bool MoreResultsToProcess { get; set; }
 
             public int MaxResultsPerSearch { get; set; }
+            
+            public string FirehoseDeliveryStreamName {get;set;}
         }
 
         public sealed class PageIterator : ChoiceState<CheckForMoreResultsToProcess>
@@ -180,7 +182,7 @@ namespace ContinuousTraining.StateMachine
                     var recordSet = records.Take(recordsToTake).ToList();
                     var firehoseTask = firehose.PutRecordBatchAsync(new PutRecordBatchRequest
                     {
-                        DeliveryStreamName = "tiger",
+                        DeliveryStreamName = context.FirehoseDeliveryStreamName,
                         Records = recordSet
                     });
                     firehoseTasks.Add(firehoseTask);
