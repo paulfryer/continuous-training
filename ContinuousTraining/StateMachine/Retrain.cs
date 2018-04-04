@@ -96,7 +96,7 @@ namespace ContinuousTraining.StateMachine
         [DotStep.Core.Action(ActionName = "sagemaker:*")]
         [DotStep.Core.Action(ActionName = "s3:*")]
         [DotStep.Core.Action(ActionName = "iam:*")]
-        private sealed class RegisterModel : TaskState<Context, CreateEndpointConfiguration>
+        public sealed class RegisterModel : TaskState<Context, CreateEndpointConfiguration>
         {
             private readonly IAmazonSageMaker sageMaker = new AmazonSageMakerClient();
 
@@ -122,7 +122,7 @@ namespace ContinuousTraining.StateMachine
         [DotStep.Core.Action(ActionName = "sagemaker:*")]
         [DotStep.Core.Action(ActionName = "s3:*")]
         [DotStep.Core.Action(ActionName = "iam:*")]
-        private sealed class CreateEndpointConfiguration : TaskState<Context, GetEndpoint>
+        public sealed class CreateEndpointConfiguration : TaskState<Context, GetEndpoint>
         {
             readonly IAmazonSageMaker sageMaker = new AmazonSageMakerClient();
 
@@ -152,7 +152,7 @@ namespace ContinuousTraining.StateMachine
         [DotStep.Core.Action(ActionName = "sagemaker:*")]
         [DotStep.Core.Action(ActionName = "s3:*")]
         [DotStep.Core.Action(ActionName = "iam:*")]
-        private sealed class GetEndpoint : TaskState<Context, DetermineIfEndpointExists>
+        public sealed class GetEndpoint : TaskState<Context, DetermineIfEndpointExists>
         {
             readonly IAmazonSageMaker sageMaker = new AmazonSageMakerClient();
 
@@ -179,7 +179,7 @@ namespace ContinuousTraining.StateMachine
             }
         }
 
-        private sealed class DetermineIfEndpointExists : ChoiceState
+        public sealed class DetermineIfEndpointExists : ChoiceState
         {
             public override List<Choice> Choices => new List<Choice>
             {
@@ -191,7 +191,7 @@ namespace ContinuousTraining.StateMachine
         [DotStep.Core.Action(ActionName = "sagemaker:*")]
         [DotStep.Core.Action(ActionName = "s3:*")]
         [DotStep.Core.Action(ActionName = "iam:*")]
-        private sealed class CreateEndpoint : TaskState<Context, Done>
+        public sealed class CreateEndpoint : TaskState<Context, Done>
         {
             readonly IAmazonSageMaker sageMaker = new AmazonSageMakerClient();
 
@@ -212,7 +212,7 @@ namespace ContinuousTraining.StateMachine
         [DotStep.Core.Action(ActionName = "sagemaker:*")]
         [DotStep.Core.Action(ActionName = "s3:*")]
         [DotStep.Core.Action(ActionName = "iam:*")]
-        private sealed class UpdateEndpoint : TaskState<Context, Done>
+        public sealed class UpdateEndpoint : TaskState<Context, Done>
         {
             readonly IAmazonSageMaker sageMaker = new AmazonSageMakerClient();
 
