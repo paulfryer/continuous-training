@@ -2,11 +2,13 @@ version: 0.1
 phases:
   build:
     commands:
-      - dotnet restore ContinuousTraining
+      - dotnet build ContinuousTraining
       - dotnet publish -c release ContinuousTraining
   post_build:
     commands:
-      - dotnet ContinuousTraining/bin/release/netcoreapp2.0/publish/ContinuousTraining.dll ContinuousTraining/bin/release
+      - dotnet new console --name Builder
+      - sed -i 's/Console.WriteLine("Hello World!")/DotStep.Builder.DotStepBuilder.BuildTemplate(args[0])/g' Builder/Program.cs
+      - cd Builder && dotnet add package DotStep.Builder && dotnet build && dotnet bin/Debug/netcoreapp2.0/Builder.dll ../ContinuousTraining/bin/Debug/netcoreapp2.0/
 artifacts:
   files:
     - ContinuousTraining/bin/release/netcoreapp2.0/publish/**/*
