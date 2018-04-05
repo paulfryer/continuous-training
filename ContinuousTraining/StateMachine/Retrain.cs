@@ -445,7 +445,7 @@ namespace ContinuousTraining.StateMachine
             {
                 var result = await glue.StartCrawlerAsync(new StartCrawlerRequest
                 {
-                    Name = "tiger-entities"
+                    Name = "ingest-crawler"
                 });
                 return context;
             }
@@ -468,7 +468,7 @@ namespace ContinuousTraining.StateMachine
                 var result = athena.StartQueryExecutionAsync(new StartQueryExecutionRequest
                 {
                     QueryString =
-                        $"SELECT at FROM tiger.entities WHERE st = '{context.SearchTerm}' AND at is not null GROUP BY at ORDER BY count(*) DESC LIMIT 998",
+                        $"SELECT at FROM extraction-database.entity WHERE st = '{context.SearchTerm}' AND at is not null GROUP BY at ORDER BY count(*) DESC LIMIT 1000",
                     QueryExecutionContext = new QueryExecutionContext
                     {
                         Database = "tiger"
@@ -504,7 +504,7 @@ namespace ContinuousTraining.StateMachine
                 var result2 = await athena.GetQueryResultsAsync(new GetQueryResultsRequest
                 {
                     QueryExecutionId = result.Result.QueryExecutionId,
-                    MaxResults = 998
+                    MaxResults = 1000
                 });
 
                 // delete the first row becauase it's the column name
@@ -540,7 +540,7 @@ namespace ContinuousTraining.StateMachine
                         {
                             Compressed = true,
                             Columns = columns,
-                            Location = $"s3://{context.TrainingBucketName}/items/",
+                            Location = $"s3://{context.TrainingBucketName}/item/",
                             InputFormat = "org.apache.hadoop.mapred.TextInputFormat",
                             OutputFormat = "org.apache.hadoop.hive.ql.io.HiveIgnoreKeyTextOutputFormat",
                             SerdeInfo = new SerDeInfo

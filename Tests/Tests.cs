@@ -23,6 +23,25 @@ namespace Tests
             Assert.IsNotNull(description);
         }
 
+
+        [TestMethod]
+        public async Task RetrainStateMachine()
+        {
+            var context = new Retrain.Context
+            {
+                SearchTerm = "YouTube",
+                TrainingBucketName = "us-west-2-ct900-setthis..",
+                ResultsBucketName = "us-west-2-ct900-setthis.."
+            };
+
+            var engine = new StateMachineEngine<Retrain, Retrain.Context>(context);
+
+            await engine.Start();
+
+            // if we made it this far, it worked.
+            Assert.IsTrue(true);
+        }
+
         [TestMethod]
         public async Task ExtractionStateMachine()
         {
