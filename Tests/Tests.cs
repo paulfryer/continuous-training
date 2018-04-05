@@ -28,8 +28,8 @@ namespace Tests
         {
             var context = new Extractor.Context
             {
-                SearchTerm = "Amazon Web Services",
-                SearchDate = DateTime.UtcNow
+                SearchTerm = "YouTube",
+                SearchDate = DateTime.UtcNow.Subtract(TimeSpan.FromDays(2))
             };
 
             var engine = new StateMachineEngine<Extractor, Extractor.Context>(context);

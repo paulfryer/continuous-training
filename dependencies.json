@@ -28,9 +28,6 @@
 					"S3Targets": [
 						{
 							"Path": { "Fn::Sub": "s3://${s3bucket}/ingest/entity/" }
-						},
-						{
-							"Path": { "Fn::Sub": "s3://${s3bucket}/ingest/item/" }
 						}
 					]
 				},
