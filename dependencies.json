@@ -1,0 +1,216 @@
+{
+	"AWSTemplateFormatVersion": "2010-09-09",
+	"Description": "Continuous Training Stack",
+	"Resources": {
+
+
+		"GlueCrawler": {
+			"DependsOn": [
+				"deliveryPolicy"
+			],
+			"Type": "AWS::Glue::Crawler",
+			"Properties": {
+				"Role": {
+					"Fn::GetAtt": [
+						"crawlerRole",
+						"Arn"
+					]
+				},
+				"Description": "Used to crawl ingested data.",
+				"SchemaChangePolicy": {
+					"UpdateBehavior": "UPDATE_IN_DATABASE",
+					"DeleteBehavior": "DELETE_FROM_DATABASE"
+				},
+				"DatabaseName": {
+					"Ref": "GlueDatabase"
+				},
+				"Targets": {
+					"S3Targets": [
+						{
+							"Path": { "Fn::Sub": "s3://${s3bucket}/ingest/entity/" }
+						},
+						{
+							"Path": { "Fn::Sub": "s3://${s3bucket}/ingest/item/" }
+						}
+					]
+				},
+				"Name": "ingest-crawler"
+			}
+		},
+
+		"GlueDatabase": {
+			"Type": "AWS::Glue::Database",
+			"Properties": {
+				"DatabaseInput": {
+					"Name": "extraction-database"
+				},
+				"CatalogId": {
+					"Ref": "AWS::AccountId"
+				}
+			}
+		},
+
+		"IngestItemDeliveryStream": {
+			"DependsOn": [
+				"deliveryPolicy"
+			],
+			"Type": "AWS::KinesisFirehose::DeliveryStream",
+			"Properties": {
+				"DeliveryStreamName": "ingest-item",
+				"DeliveryStreamType": "DirectPut",
+				"ExtendedS3DestinationConfiguration": {
+					"BucketARN": { "Fn::Sub": "arn:aws:s3:::${s3bucket}" },
+					"BufferingHints": {
+						"IntervalInSeconds": "300",
+						"SizeInMBs": "64"
+					},
+					"CompressionFormat": "GZIP",
+					"Prefix": "ingest/item/",
+					"RoleARN": {
+						"Fn::GetAtt": [
+							"deliveryRole",
+							"Arn"
+						]
+					}
+				}
+			}
+		},
+		"IngestEntityDeliveryStream": {
+			"DependsOn": [
+				"deliveryPolicy"
+			],
+			"Type": "AWS::KinesisFirehose::DeliveryStream",
+			"Properties": {
+				"DeliveryStreamName": "ingest-entity",
+				"DeliveryStreamType": "DirectPut",
+				"ExtendedS3DestinationConfiguration": {
+					"BucketARN": { "Fn::Sub": "arn:aws:s3:::${s3bucket}" },
+					"BufferingHints": {
+						"IntervalInSeconds": "300",
+						"SizeInMBs": "64"
+					},
+					"CompressionFormat": "GZIP",
+					"Prefix": "ingest/entity/",
+					"RoleARN": {
+						"Fn::GetAtt": [
+							"deliveryRole",
+							"Arn"
+						]
+					}
+				}
+			}
+		},
+		"s3bucket": {
+			"Type": "AWS::S3::Bucket",
+			"Properties": {
+				"BucketName": { "Fn::Sub": "${AWS::Region}-${AWS::StackName}-${AWS::AccountId}" }
+			}
+		},
+		"crawlerRole": {
+			"Type": "AWS::IAM::Role",
+			"Properties": {
+				"ManagedPolicyArns": [ "arn:aws:iam::aws:policy/service-role/AWSGlueServiceRole" ],
+				"AssumeRolePolicyDocument": {
+					"Version": "2012-10-17",
+					"Statement": [
+						{
+							"Sid": "",
+							"Effect": "Allow",
+							"Principal": {
+								"Service": "glue.amazonaws.com"
+							},
+							"Action": "sts:AssumeRole",
+							"Condition": {
+								"StringEquals": {
+									"sts:ExternalId": {
+										"Ref": "AWS::AccountId"
+									}
+								}
+							}
+						}
+					]
+				}
+			}
+		},
+		"deliveryRole": {
+			"Type": "AWS::IAM::Role",
+			"Properties": {
+				"AssumeRolePolicyDocument": {
+					"Version": "2012-10-17",
+					"Statement": [
+						{
+							"Sid": "",
+							"Effect": "Allow",
+							"Principal": {
+								"Service": "firehose.amazonaws.com"
+							},
+							"Action": "sts:AssumeRole",
+							"Condition": {
+								"StringEquals": {
+									"sts:ExternalId": {
+										"Ref": "AWS::AccountId"
+									}
+								}
+							}
+						}
+					]
+				}
+			}
+		},
+		"deliveryPolicy": {
+			"Type": "AWS::IAM::Policy",
+			"Properties": {
+				"PolicyName": { "Fn::Sub": "${AWS::StackName}-FirehoseDeliveryPolicy" },
+				"PolicyDocument": {
+					"Version": "2012-10-17",
+					"Statement": [
+						{
+							"Effect": "Allow",
+							"Action": [
+								"s3:AbortMultipartUpload",
+								"s3:GetBucketLocation",
+								"s3:GetObject",
+								"s3:ListBucket",
+								"s3:ListBucketMultipartUploads",
+								"s3:PutObject"
+							],
+							"Resource": [
+								{
+									"Fn::Join": [
+										"",
+										[
+											"arn:aws:s3:::",
+											{
+												"Ref": "s3bucket"
+											}
+										]
+									]
+								},
+								{
+									"Fn::Join": [
+										"",
+										[
+											"arn:aws:s3:::",
+											{
+												"Ref": "s3bucket"
+											},
+											"*"
+										]
+									]
+								}
+							]
+						}
+					]
+				},
+				"Roles": [
+					{
+						"Ref": "deliveryRole"
+					},
+					{
+						"Ref": "crawlerRole"
+					}
+				]
+			}
+		}
+	}
+}

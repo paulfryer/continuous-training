@@ -7,8 +7,6 @@ using System.Security.Cryptography;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
-using Amazon.Comprehend;
-using Amazon.Comprehend.Model;
 using Amazon.KinesisFirehose;
 using Amazon.KinesisFirehose.Model;
 using ContinuousTraining.ContentSearch;
@@ -46,7 +44,6 @@ namespace ContinuousTraining.StateMachine
 
             public int MaxResultsPerSearch { get; set; }
             
-            public string FirehoseDeliveryStreamName {get;set;}
         }
 
         public sealed class PageIterator : ChoiceState<CheckForMoreResultsToProcess>
@@ -136,12 +133,12 @@ namespace ContinuousTraining.StateMachine
         [DotStep.Core.Action(ActionName = "dynamodb:*")]
         public sealed class ExtractEntities : TaskState<Context, CheckForMoreResultsToProcess>
         {
-            private readonly IAmazonKinesisFirehose firehose = new AmazonKinesisFirehoseClient();
-
             private readonly List<IEntityExtractor> entityExtractors = new List<IEntityExtractor>
             {
                 new AmazonEntityExtractor()
             };
+
+            private readonly IAmazonKinesisFirehose firehose = new AmazonKinesisFirehoseClient();
 
             public override async Task<Context> Execute(Context context)
             {
@@ -152,7 +149,7 @@ namespace ContinuousTraining.StateMachine
                 }
 
                 var extractionTasks = new List<Task<List<ExtractedEntity>>>();
-               
+
                 foreach (var entityExtractor in entityExtractors)
                     extractionTasks.Add(entityExtractor.ExtractEntitiesAsync(context.Text));
 
@@ -182,7 +179,7 @@ namespace ContinuousTraining.StateMachine
                     var recordSet = records.Take(recordsToTake).ToList();
                     var firehoseTask = firehose.PutRecordBatchAsync(new PutRecordBatchRequest
                     {
-                        DeliveryStreamName = context.FirehoseDeliveryStreamName,
+                        DeliveryStreamName = "ingest-entity",
                         Records = recordSet
                     });
                     firehoseTasks.Add(firehoseTask);
@@ -197,7 +194,7 @@ namespace ContinuousTraining.StateMachine
                 itemJson = JsonConvert.SerializeObject(itemDynamic) + "\n";
                 var itemFirehoseTask = firehose.PutRecordAsync(new PutRecordRequest
                 {
-                    DeliveryStreamName = "tiger-items",
+                    DeliveryStreamName = "ingest-item",
                     Record = new Record
                     {
                         Data = GenerateStreamFromString(itemJson)
