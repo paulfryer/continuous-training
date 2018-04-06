@@ -3,6 +3,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using ContinuousTraining.EntityExtraction;
 using ContinuousTraining.EntityExtraction.ContinuousTraining.EntityExtractors;
+using ContinuousTraining.Indexing;
 using ContinuousTraining.StateMachine;
 using ContinuousTraining.TextExtraction;
 using DotStep.Core;
@@ -30,8 +31,9 @@ namespace Tests
             var context = new Retrain.Context
             {
                 SearchTerm = "YouTube",
-                TrainingBucketName = "us-west-2-ct900-setthis..",
-                ResultsBucketName = "us-west-2-ct900-setthis.."
+                TrainingBucketName = "us-west-2-ct900-989469592528",
+                ResultsBucketName = "us-west-2-ct900-989469592528",
+                QueryExecutionBucket = "us-west-2-ct900-989469592528"
             };
 
             var engine = new StateMachineEngine<Retrain, Retrain.Context>(context);
@@ -59,6 +61,23 @@ namespace Tests
             Assert.IsTrue(true);
         }
 
+
+        [TestClass]
+        public class IndexingServices
+        {
+            [TestMethod]
+            public async Task TestYahooFinance()
+            {
+                var symbol = "AMZN";
+                var start = DateTime.UtcNow;
+                var end = DateTime.UtcNow.Subtract(TimeSpan.FromDays(7));
+                var yahooFinanceService = new YahooFinanceIndexingService();
+                var stats = await yahooFinanceService.GetStatistics(start, end, symbol);
+
+                Assert.IsTrue(stats.Any());
+
+            }
+        }
 
         [TestClass]
         public class ExtractionServices

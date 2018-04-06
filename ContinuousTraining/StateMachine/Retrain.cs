@@ -392,10 +392,13 @@ namespace ContinuousTraining.StateMachine
 
             public override async Task<Context> Execute(Context context)
             {
+
+                // TODO: need to build a price / index refernce import process. Start with yahoo finance.
+
                 var sqlBuilder = new StringBuilder();
                 sqlBuilder.AppendLine("SELECT (ix1.price - ix.price) / ix.price,");
                 var itemTableDefinition =
-                    await glue.GetTableAsync(new GetTableRequest {DatabaseName = "tiger", Name = context.TableName});
+                    await glue.GetTableAsync(new GetTableRequest {DatabaseName = "extraction-database", Name = context.TableName});
                 var itemColumns = itemTableDefinition.Table.StorageDescriptor.Columns;
                 var colIndex = 0;
                 foreach (var column in itemColumns)
@@ -468,10 +471,10 @@ namespace ContinuousTraining.StateMachine
                 var result = athena.StartQueryExecutionAsync(new StartQueryExecutionRequest
                 {
                     QueryString =
-                        $"SELECT at FROM extraction-database.entity WHERE st = '{context.SearchTerm}' AND at is not null GROUP BY at ORDER BY count(*) DESC LIMIT 1000",
+                        $"SELECT at FROM \"entity\" WHERE st = '{context.SearchTerm}' AND at is not null GROUP BY at ORDER BY count(*) DESC LIMIT 1000",
                     QueryExecutionContext = new QueryExecutionContext
                     {
-                        Database = "tiger"
+                        Database = "extraction-database"
                     },
                     ResultConfiguration = new ResultConfiguration
                     {
@@ -521,7 +524,7 @@ namespace ContinuousTraining.StateMachine
 
                 var result3 = await glue.CreateTableAsync(new CreateTableRequest
                 {
-                    DatabaseName = "tiger",
+                    DatabaseName = "extraction-database",
 
                     TableInput = new TableInput
                     {
