@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Net.Http;
 using System.Threading.Tasks;
 using Amazon.SimpleSystemsManagement;
@@ -48,7 +49,7 @@ namespace ContinuousTraining.Indexing
                         Volume = Convert.ToDecimal(value.Value<string>("5. volume")),
                     });
                 }
-                return stats;
+                return stats.Where(s => s.Date >= start && s.Date <= end).ToList();
             }
         }
     }

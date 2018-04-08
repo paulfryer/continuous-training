@@ -69,24 +69,26 @@ namespace Tests
             [TestMethod]
             public async Task TestAlphaVantage()
             {
+                var days = 7;
                 var symbol = "AMZN";
                 var start = DateTime.UtcNow;
                 var end = DateTime.UtcNow.Subtract(TimeSpan.FromDays(7));
                 IIndexingService yahooFinanceService = new AlphaVantageIndexingService();
                 var stats = await yahooFinanceService.GetStatisticsAsync(start, end, symbol);
-                Assert.IsTrue(stats.Any());
+                Assert.IsFalse(stats.Count == days);
             }
 
 
             [TestMethod]
             public async Task TestYahooFinance()
             {
+                var days = 7;
                 var symbol = "AMZN";
                 var start = DateTime.UtcNow;
-                var end = DateTime.UtcNow.Subtract(TimeSpan.FromDays(7));
+                var end = DateTime.UtcNow.Subtract(TimeSpan.FromDays(days));
                 IIndexingService yahooFinanceService = new YahooFinanceIndexingService();
                 var stats = await yahooFinanceService.GetStatisticsAsync(start, end, symbol);
-                Assert.IsTrue(stats.Any());
+                Assert.IsFalse(stats.Count == days);
             }
 
 
