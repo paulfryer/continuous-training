@@ -84,7 +84,7 @@ namespace ContinuousTraining.StateMachine
         }
 
         [DotStep.Core.Action(ActionName = "s3:PutObject")]
-        [DotStep.Core.Action(ActionName = "ssm:GetParameter")]
+        [DotStep.Core.Action(ActionName = "ssm:*")]
         public sealed class GetLatestIndexingData : TaskState<Context, SubmitIndexingJob>
         {
             private readonly IIndexingService indexingService = new AlphaVantageIndexingService();
