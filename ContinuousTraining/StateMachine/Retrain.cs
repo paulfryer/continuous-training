@@ -17,7 +17,7 @@ using DotStep.Core;
 
 namespace ContinuousTraining.StateMachine
 {
-    public sealed class Retrain : StateMachine<ReferencedTaskState<Retrain.Context, Retrain.ReCrawlEntities, ValidateMessage<Retrain.Context>>>
+    public sealed class Retrain : StateMachine<Retrain.Validate>
     {
         public class Context : IContext
         {
@@ -49,6 +49,11 @@ namespace ContinuousTraining.StateMachine
             public string EndpointArn { get; set; }
             [Required]
             public string QueryExecutionBucket { get; set; }
+        }
+
+        public sealed class Validate : ReferencedTaskState<Context, CrawlS3ForNewPartitions,
+            ValidateMessage<Context>>
+        {
         }
 
         public sealed class Done : EndState
@@ -444,7 +449,7 @@ namespace ContinuousTraining.StateMachine
 
         [DotStep.Core.Action(ActionName = "glue:*")]
         [DotStep.Core.Action(ActionName = "s3:*")]
-        public sealed class ReCrawlEntities : TaskState<Context, WaitForCrawlingToComplete>
+        public sealed class CrawlS3ForNewPartitions : TaskState<Context, WaitForCrawlingToComplete>
         {
             private readonly IAmazonGlue glue = new AmazonGlueClient();
 
