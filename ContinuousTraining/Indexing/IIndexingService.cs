@@ -19,5 +19,18 @@ namespace ContinuousTraining.Indexing
         public decimal Close { get; set; }
         public decimal Volume { get; set; }
     }
+
+    public static class Extensions
+    {
+        public static string ToCSV(this List<Statistic> statistics)
+        {
+            var sb = new StringBuilder();
+            sb.AppendLine("date,open,high,low,close,volume");
+            foreach (var stat in statistics)
+                sb.AppendLine($"{stat.Date},{stat.Open},{stat.High},{stat.Low},{stat.Close},{stat.Volume}");
+
+            return sb.ToString();
+        }
+    }
 }
 

@@ -25,15 +25,31 @@ namespace Tests
         }
 
 
+
+        [TestMethod]
+        public async Task CrawlTest()
+        {
+            var context = new Crawler.Context
+            {
+                Symbol = "AMZN",
+                SearchTerm = "Amazon"
+            };
+
+            var engine = new StateMachineEngine<Crawler, Crawler.Context>(context);
+
+            await engine.Start();
+
+            // if we made it this far, it worked.
+            Assert.IsTrue(true);
+        }
+
+
         [TestMethod]
         public async Task RetrainStateMachine()
         {
             var context = new Retrain.Context
             {
-                SearchTerm = "YouTube",
-                TrainingBucketName = "us-west-2-ct900-989469592528",
-                ResultsBucketName = "us-west-2-ct900-989469592528",
-                QueryExecutionBucket = "us-west-2-ct900-989469592528"
+                SearchTerm = "YouTube"
             };
 
             var engine = new StateMachineEngine<Retrain, Retrain.Context>(context);
@@ -69,29 +85,13 @@ namespace Tests
             [TestMethod]
             public async Task TestAlphaVantage()
             {
-                var days = 7;
                 var symbol = "AMZN";
-                var start = DateTime.UtcNow;
-                var end = DateTime.UtcNow.Subtract(TimeSpan.FromDays(7));
+                var end = DateTime.UtcNow;
+                var start = DateTime.UtcNow.Subtract(TimeSpan.FromDays(7));
                 IIndexingService yahooFinanceService = new AlphaVantageIndexingService();
                 var stats = await yahooFinanceService.GetStatisticsAsync(start, end, symbol);
-                Assert.IsFalse(stats.Count == days);
+                Assert.IsFalse(stats.Any());
             }
-
-
-            [TestMethod]
-            public async Task TestYahooFinance()
-            {
-                var days = 7;
-                var symbol = "AMZN";
-                var start = DateTime.UtcNow;
-                var end = DateTime.UtcNow.Subtract(TimeSpan.FromDays(days));
-                IIndexingService yahooFinanceService = new YahooFinanceIndexingService();
-                var stats = await yahooFinanceService.GetStatisticsAsync(start, end, symbol);
-                Assert.IsFalse(stats.Count == days);
-            }
-
-
 
         }
 

@@ -1,8 +1,44 @@
 {
 	"AWSTemplateFormatVersion": "2010-09-09",
 	"Description": "Continuous Training Stack",
+	"Parameters": {
+		"DiffBotToken": {
+			"Default": "set-token-here",
+			"Type": "String"
+		},
+		"AlphaVantageAPIKey": {
+			"Type": "String",
+			"Default": "set-api-key-here"
+		}
+	},
 	"Resources": {
-
+		"DiffBotParameter": {
+			"Type": "AWS::SSM::Parameter",
+			"Properties": {
+				"Name": "/CT/DiffbotToken",
+				"Type": "String",
+				"Value": { "Fn::Sub": "${DiffBotToken}" },
+				"Description": "https://www.diffbot.com"
+			}
+		},
+		"AlphaVantageParameter": {
+			"Type": "AWS::SSM::Parameter",
+			"Properties": {
+				"Name": "/CT/AlphaVantageAPIKey",
+				"Type": "String",
+				"Value": { "Fn::Sub": "${AlphaVantageAPIKey}" },
+				"Description": "https://www.alphavantage.co"
+			}
+		},
+		"BucketNameParameter": {
+			"Type": "AWS::SSM::Parameter",
+			"Properties": {
+				"Name": "/CT/BucketName",
+				"Type": "String",
+				"Value": { "Fn::Sub": "${s3bucket}" },
+				"Description": "The bucket name used for the CT project."
+			}
+		},
 
 		"GlueCrawler": {
 			"DependsOn": [

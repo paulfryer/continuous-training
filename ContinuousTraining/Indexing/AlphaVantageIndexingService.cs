@@ -22,8 +22,7 @@ namespace ContinuousTraining.Indexing
                 var response =
                     await ssm.GetParameterAsync(new GetParameterRequest
                     {
-                        Name = "/CT/AlphaVantageAPIKey",
-                        WithDecryption = true
+                        Name = "/CT/AlphaVantageAPIKey"
                     });
                 apiKey = response.Parameter.Value;
             }

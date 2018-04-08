@@ -12,21 +12,24 @@ using Amazon.S3;
 using Amazon.S3.Model;
 using Amazon.SageMaker;
 using Amazon.SageMaker.Model;
+using DotStep.Common.Functions;
 using DotStep.Core;
 
 namespace ContinuousTraining.StateMachine
 {
-    public sealed class Retrain : StateMachine<Retrain.ReCrawlEntities>
+    public sealed class Retrain : StateMachine<ReferencedTaskState<Retrain.Context, Retrain.ReCrawlEntities, ValidateMessage<Retrain.Context>>>
     {
         public class Context : IContext
         {
+            [Required]
             public string SearchTerm { get; set; }
 
             public string TableName { get; set; }
 
             public string QueryExecutionId { get; set; }
+            [Required]
             public string ResultsBucketName { get; set; }
-
+            [Required]
             public string TrainingBucketName { get; set; }
             public string TrainingKeyName { get; set; }
             public string ValidationKeyName { get; set; }
@@ -44,6 +47,7 @@ namespace ContinuousTraining.StateMachine
             public bool EndpointExists { get; set; }
 
             public string EndpointArn { get; set; }
+            [Required]
             public string QueryExecutionBucket { get; set; }
         }
 
