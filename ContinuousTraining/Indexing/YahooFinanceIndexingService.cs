@@ -7,7 +7,7 @@ namespace ContinuousTraining.Indexing
 {
     public class YahooFinanceIndexingService : IIndexingService
     {
-        public async Task<List<Statistic>> GetStatistics(DateTime start, DateTime end, string symbol)
+        public async Task<List<Statistic>> GetStatisticsAsync(DateTime start, DateTime end, string symbol)
         {
 
             var period1 = ToEpoch(start);

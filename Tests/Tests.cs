@@ -65,18 +65,32 @@ namespace Tests
         [TestClass]
         public class IndexingServices
         {
+
+            [TestMethod]
+            public async Task TestAlphaVantage()
+            {
+                var symbol = "AMZN";
+                var start = DateTime.UtcNow;
+                var end = DateTime.UtcNow.Subtract(TimeSpan.FromDays(7));
+                IIndexingService yahooFinanceService = new AlphaVantageIndexingService();
+                var stats = await yahooFinanceService.GetStatisticsAsync(start, end, symbol);
+                Assert.IsTrue(stats.Any());
+            }
+
+
             [TestMethod]
             public async Task TestYahooFinance()
             {
                 var symbol = "AMZN";
                 var start = DateTime.UtcNow;
                 var end = DateTime.UtcNow.Subtract(TimeSpan.FromDays(7));
-                var yahooFinanceService = new YahooFinanceIndexingService();
-                var stats = await yahooFinanceService.GetStatistics(start, end, symbol);
-
+                IIndexingService yahooFinanceService = new YahooFinanceIndexingService();
+                var stats = await yahooFinanceService.GetStatisticsAsync(start, end, symbol);
                 Assert.IsTrue(stats.Any());
-
             }
+
+
+
         }
 
         [TestClass]

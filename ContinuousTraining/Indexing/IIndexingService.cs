@@ -5,9 +5,9 @@ using System.Threading.Tasks;
 
 namespace ContinuousTraining.Indexing
 {
-    interface IIndexingService
+    public interface IIndexingService
     {
-        Task<List<Statistic>> GetStatistics(DateTime start, DateTime end, string symbol);
+        Task<List<Statistic>> GetStatisticsAsync(DateTime start, DateTime end, string symbol);
     }
 
     public class Statistic
