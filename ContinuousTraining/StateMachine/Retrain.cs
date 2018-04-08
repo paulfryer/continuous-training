@@ -12,12 +12,14 @@ using Amazon.S3;
 using Amazon.S3.Model;
 using Amazon.SageMaker;
 using Amazon.SageMaker.Model;
+using Amazon.SimpleSystemsManagement;
+using Amazon.SimpleSystemsManagement.Model;
 using DotStep.Common.Functions;
 using DotStep.Core;
 
 namespace ContinuousTraining.StateMachine
 {
-    public sealed class Retrain : StateMachine<Retrain.Validate>
+    public sealed class Retrain : StateMachine<Retrain.SetDefaults>
     {
         public class Context : IContext
         {
@@ -49,6 +51,29 @@ namespace ContinuousTraining.StateMachine
             public string EndpointArn { get; set; }
             [Required]
             public string QueryExecutionBucket { get; set; }
+        }
+
+        [DotStep.Core.Action(ActionName = "ssm:*")]
+        public sealed class SetDefaults : TaskState<Context, Validate>
+        {
+            private readonly IAmazonSimpleSystemsManagement ssm = new AmazonSimpleSystemsManagementClient();
+            public override async Task<Context> Execute(Context context)
+            {
+                var result = await ssm.GetParameterAsync(new GetParameterRequest { Name = "/CT/BucketName" });
+
+                var defaultBucketName = result.Parameter.Value;
+
+                if (string.IsNullOrEmpty(context.QueryExecutionBucket))
+                context.QueryExecutionBucket = defaultBucketName;
+
+                if (string.IsNullOrEmpty(context.ResultsBucketName))
+                    context.ResultsBucketName = defaultBucketName;
+
+                if (string.IsNullOrEmpty(context.TrainingBucketName))
+                    context.TrainingBucketName = defaultBucketName;
+
+                return context;
+            }
         }
 
         public sealed class Validate : ReferencedTaskState<Context, CrawlS3ForNewPartitions,
