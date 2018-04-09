@@ -1,284 +1,307 @@
 {
-	"AWSTemplateFormatVersion": "2010-09-09",
-	"Description": "Continuous Training Stack",
-	"Parameters": {
-		"DiffBotToken": {
-			"Default": "set-token-here",
-			"Type": "String"
-		},
-		"AlphaVantageAPIKey": {
-			"Type": "String",
-			"Default": "set-api-key-here"
-		}
-	},
-	"Resources": {
-		"DiffBotParameter": {
-			"Type": "AWS::SSM::Parameter",
-			"Properties": {
-				"Name": "/CT/DiffbotToken",
-				"Type": "String",
-				"Value": { "Fn::Sub": "${DiffBotToken}" },
-				"Description": "https://www.diffbot.com"
-			}
-		},
-		"AlphaVantageParameter": {
-			"Type": "AWS::SSM::Parameter",
-			"Properties": {
-				"Name": "/CT/AlphaVantageAPIKey",
-				"Type": "String",
-				"Value": { "Fn::Sub": "${AlphaVantageAPIKey}" },
-				"Description": "https://www.alphavantage.co"
-			}
-		},
-		"BucketNameParameter": {
-			"Type": "AWS::SSM::Parameter",
-			"Properties": {
-				"Name": "/CT/BucketName",
-				"Type": "String",
-				"Value": { "Fn::Sub": "${s3bucket}" },
-				"Description": "The bucket name used for the CT project."
-			}
-		},
-		"SageMakerRoleParameter": {
-			"Type": "AWS::SSM::Parameter",
-			"Properties": {
-				"Name": "/CT/SageMakerRole",
-				"Type": "String",
-				"Value": {
-					"Fn::GetAtt": [
-						"SageMakerRole",
-						"Arn"
-					]
-				},
-				"Description": "The IAM Role ARN used to interact with the Sagemaker service."
-			}
-		},
-		"GlueCrawler": {
-			"DependsOn": [
-				"deliveryPolicy"
-			],
-			"Type": "AWS::Glue::Crawler",
-			"Properties": {
-				"Role": {
-					"Fn::GetAtt": [
-						"crawlerRole",
-						"Arn"
-					]
-				},
-				"Description": "Used to crawl ingested data.",
-				"SchemaChangePolicy": {
-					"UpdateBehavior": "UPDATE_IN_DATABASE",
-					"DeleteBehavior": "DELETE_FROM_DATABASE"
-				},
-				"DatabaseName": {
-					"Ref": "GlueDatabase"
-				},
-				"Targets": {
-					"S3Targets": [
-						{
-							"Path": { "Fn::Sub": "s3://${s3bucket}/ingest/entity/" }
-						},
-						{
-							"Path": { "Fn::Sub": "s3://${s3bucket}/ingest/index/" }
-						}
-					]
-				},
-				"Name": "ingest-crawler"
-			}
-		},
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Description": "Continuous Training Stack",
+  "Mappings": {
+    "XGBoostContainerMapping": {
+      "us-west-2": { "AMI": "433757028032.dkr.ecr.us-west-2.amazonaws.com/xgboost:latest" },
+      "us-east-1": { "AMI": "811284229777.dkr.ecr.us-east-1.amazonaws.com/xgboost:latest" },
+      "us-east-2": { "AMI": "825641698319.dkr.ecr.us-east-2.amazonaws.com/xgboost:latest" },
+      "eu-west-1": { "AMI": "685385470294.dkr.ecr.eu-west-1.amazonaws.com/xgboost:latest" }
+    }
+  },
+  "Parameters": {
+    "DiffBotToken": {
+      "Default": "set-token-here",
+      "Type": "String"
+    },
+    "AlphaVantageAPIKey": {
+      "Type": "String",
+      "Default": "set-api-key-here"
+    }
+  },
+  "Resources": {
+    "SageMakerTrainingContainer": {
+      "Type": "AWS::SSM::Parameter",
+      "Properties": {
+        "Name": "/CT/SageMakerTrainingContainer",
+        "Type": "String",
+        "Value": {
+          "Fn::FindInMap": [
+            "XGBoostContainerMapping",
+            { "Ref": "AWS::Region" },
+            "AMI"
+          ]
+        },
+        "Description": "The training container used to train data in SageMaker."
+      }
+    },
+    "DiffBotParameter": {
+      "Type": "AWS::SSM::Parameter",
+      "Properties": {
+        "Name": "/CT/DiffbotToken",
+        "Type": "String",
+        "Value": { "Fn::Sub": "${DiffBotToken}" },
+        "Description": "https://www.diffbot.com"
+      }
+    },
+    "AlphaVantageParameter": {
+      "Type": "AWS::SSM::Parameter",
+      "Properties": {
+        "Name": "/CT/AlphaVantageAPIKey",
+        "Type": "String",
+        "Value": { "Fn::Sub": "${AlphaVantageAPIKey}" },
+        "Description": "https://www.alphavantage.co"
+      }
+    },
+    "BucketNameParameter": {
+      "Type": "AWS::SSM::Parameter",
+      "Properties": {
+        "Name": "/CT/BucketName",
+        "Type": "String",
+        "Value": { "Fn::Sub": "${s3bucket}" },
+        "Description": "The bucket name used for the CT project."
+      }
+    },
+    "SageMakerRoleParameter": {
+      "Type": "AWS::SSM::Parameter",
+      "Properties": {
+        "Name": "/CT/SageMakerRole",
+        "Type": "String",
+        "Value": {
+          "Fn::GetAtt": [
+            "SageMakerRole",
+            "Arn"
+          ]
+        },
+        "Description": "The IAM Role ARN used to interact with the Sagemaker service."
+      }
+    },
+    "GlueCrawler": {
+      "DependsOn": [
+        "deliveryPolicy"
+      ],
+      "Type": "AWS::Glue::Crawler",
+      "Properties": {
+        "Role": {
+          "Fn::GetAtt": [
+            "crawlerRole",
+            "Arn"
+          ]
+        },
+        "Description": "Used to crawl ingested data.",
+        "SchemaChangePolicy": {
+          "UpdateBehavior": "UPDATE_IN_DATABASE",
+          "DeleteBehavior": "DELETE_FROM_DATABASE"
+        },
+        "DatabaseName": {
+          "Ref": "GlueDatabase"
+        },
+        "Targets": {
+          "S3Targets": [
+            {
+              "Path": { "Fn::Sub": "s3://${s3bucket}/ingest/entity/" }
+            },
+            {
+              "Path": { "Fn::Sub": "s3://${s3bucket}/ingest/index/" }
+            }
+          ]
+        },
+        "Name": "ingest-crawler"
+      }
+    },
 
-		"GlueDatabase": {
-			"Type": "AWS::Glue::Database",
-			"Properties": {
-				"DatabaseInput": {
-					"Name": "extraction-database"
-				},
-				"CatalogId": {
-					"Ref": "AWS::AccountId"
-				}
-			}
-		},
+    "GlueDatabase": {
+      "Type": "AWS::Glue::Database",
+      "Properties": {
+        "DatabaseInput": {
+          "Name": "extraction-database"
+        },
+        "CatalogId": {
+          "Ref": "AWS::AccountId"
+        }
+      }
+    },
 
-		"IngestItemDeliveryStream": {
-			"DependsOn": [
-				"deliveryPolicy"
-			],
-			"Type": "AWS::KinesisFirehose::DeliveryStream",
-			"Properties": {
-				"DeliveryStreamName": "ingest-item",
-				"DeliveryStreamType": "DirectPut",
-				"ExtendedS3DestinationConfiguration": {
-					"BucketARN": { "Fn::Sub": "arn:aws:s3:::${s3bucket}" },
-					"BufferingHints": {
-						"IntervalInSeconds": "300",
-						"SizeInMBs": "64"
-					},
-					"CompressionFormat": "GZIP",
-					"Prefix": "ingest/item/",
-					"RoleARN": {
-						"Fn::GetAtt": [
-							"deliveryRole",
-							"Arn"
-						]
-					}
-				}
-			}
-		},
-		"IngestEntityDeliveryStream": {
-			"DependsOn": [
-				"deliveryPolicy"
-			],
-			"Type": "AWS::KinesisFirehose::DeliveryStream",
-			"Properties": {
-				"DeliveryStreamName": "ingest-entity",
-				"DeliveryStreamType": "DirectPut",
-				"ExtendedS3DestinationConfiguration": {
-					"BucketARN": { "Fn::Sub": "arn:aws:s3:::${s3bucket}" },
-					"BufferingHints": {
-						"IntervalInSeconds": "300",
-						"SizeInMBs": "64"
-					},
-					"CompressionFormat": "GZIP",
-					"Prefix": "ingest/entity/",
-					"RoleARN": {
-						"Fn::GetAtt": [
-							"deliveryRole",
-							"Arn"
-						]
-					}
-				}
-			}
-		},
-		"s3bucket": {
-			"Type": "AWS::S3::Bucket",
-			"Properties": {
-				"BucketName": { "Fn::Sub": "${AWS::Region}-${AWS::StackName}-${AWS::AccountId}" }
-			}
-		},
-		"SageMakerRole": {
-			"Type": "AWS::IAM::Role",
-			"Properties": {
-				"ManagedPolicyArns": [ "arn:aws:iam::aws:policy/AmazonSageMakerFullAccess" ],
-				"AssumeRolePolicyDocument": {
-					"Version": "2012-10-17",
-					"Statement": [
-						{
-							"Sid": "",
-							"Effect": "Allow",
-							"Principal": {
-								"Service": "sagemaker.amazonaws.com"
-							},
-							"Action": "sts:AssumeRole"
-						}
-					]
-				}
-			}
-		},
-		"crawlerRole": {
-			"Type": "AWS::IAM::Role",
-			"Properties": {
-				"ManagedPolicyArns": [ "arn:aws:iam::aws:policy/service-role/AWSGlueServiceRole" ],
-				"AssumeRolePolicyDocument": {
-					"Version": "2012-10-17",
-					"Statement": [
-						{
-							"Sid": "",
-							"Effect": "Allow",
-							"Principal": {
-								"Service": "glue.amazonaws.com"
-							},
-							"Action": "sts:AssumeRole",
-							"Condition": {
-								"StringEquals": {
-									"sts:ExternalId": {
-										"Ref": "AWS::AccountId"
-									}
-								}
-							}
-						}
-					]
-				}
-			}
-		},
-		"deliveryRole": {
-			"Type": "AWS::IAM::Role",
-			"Properties": {
-				"AssumeRolePolicyDocument": {
-					"Version": "2012-10-17",
-					"Statement": [
-						{
-							"Sid": "",
-							"Effect": "Allow",
-							"Principal": {
-								"Service": "firehose.amazonaws.com"
-							},
-							"Action": "sts:AssumeRole",
-							"Condition": {
-								"StringEquals": {
-									"sts:ExternalId": {
-										"Ref": "AWS::AccountId"
-									}
-								}
-							}
-						}
-					]
-				}
-			}
-		},
-		"deliveryPolicy": {
-			"Type": "AWS::IAM::Policy",
-			"Properties": {
-				"PolicyName": { "Fn::Sub": "${AWS::StackName}-FirehoseDeliveryPolicy" },
-				"PolicyDocument": {
-					"Version": "2012-10-17",
-					"Statement": [
-						{
-							"Effect": "Allow",
-							"Action": [
-								"s3:AbortMultipartUpload",
-								"s3:GetBucketLocation",
-								"s3:GetObject",
-								"s3:ListBucket",
-								"s3:ListBucketMultipartUploads",
-								"s3:PutObject"
-							],
-							"Resource": [
-								{
-									"Fn::Join": [
-										"",
-										[
-											"arn:aws:s3:::",
-											{
-												"Ref": "s3bucket"
-											}
-										]
-									]
-								},
-								{
-									"Fn::Join": [
-										"",
-										[
-											"arn:aws:s3:::",
-											{
-												"Ref": "s3bucket"
-											},
-											"*"
-										]
-									]
-								}
-							]
-						}
-					]
-				},
-				"Roles": [
-					{
-						"Ref": "deliveryRole"
-					},
-					{
-						"Ref": "crawlerRole"
-					}
-				]
-			}
-		}
-	}
+    "IngestItemDeliveryStream": {
+      "DependsOn": [
+        "deliveryPolicy"
+      ],
+      "Type": "AWS::KinesisFirehose::DeliveryStream",
+      "Properties": {
+        "DeliveryStreamName": "ingest-item",
+        "DeliveryStreamType": "DirectPut",
+        "ExtendedS3DestinationConfiguration": {
+          "BucketARN": { "Fn::Sub": "arn:aws:s3:::${s3bucket}" },
+          "BufferingHints": {
+            "IntervalInSeconds": "300",
+            "SizeInMBs": "64"
+          },
+          "CompressionFormat": "GZIP",
+          "Prefix": "ingest/item/",
+          "RoleARN": {
+            "Fn::GetAtt": [
+              "deliveryRole",
+              "Arn"
+            ]
+          }
+        }
+      }
+    },
+    "IngestEntityDeliveryStream": {
+      "DependsOn": [
+        "deliveryPolicy"
+      ],
+      "Type": "AWS::KinesisFirehose::DeliveryStream",
+      "Properties": {
+        "DeliveryStreamName": "ingest-entity",
+        "DeliveryStreamType": "DirectPut",
+        "ExtendedS3DestinationConfiguration": {
+          "BucketARN": { "Fn::Sub": "arn:aws:s3:::${s3bucket}" },
+          "BufferingHints": {
+            "IntervalInSeconds": "300",
+            "SizeInMBs": "64"
+          },
+          "CompressionFormat": "GZIP",
+          "Prefix": "ingest/entity/",
+          "RoleARN": {
+            "Fn::GetAtt": [
+              "deliveryRole",
+              "Arn"
+            ]
+          }
+        }
+      }
+    },
+    "s3bucket": {
+      "Type": "AWS::S3::Bucket",
+      "Properties": {
+        "BucketName": { "Fn::Sub": "${AWS::Region}-${AWS::StackName}-${AWS::AccountId}" }
+      }
+    },
+    "SageMakerRole": {
+      "Type": "AWS::IAM::Role",
+      "Properties": {
+        "ManagedPolicyArns": [ "arn:aws:iam::aws:policy/AmazonSageMakerFullAccess" ],
+        "AssumeRolePolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Sid": "",
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "sagemaker.amazonaws.com"
+              },
+              "Action": "sts:AssumeRole"
+            }
+          ]
+        }
+      }
+    },
+    "crawlerRole": {
+      "Type": "AWS::IAM::Role",
+      "Properties": {
+        "ManagedPolicyArns": [ "arn:aws:iam::aws:policy/service-role/AWSGlueServiceRole" ],
+        "AssumeRolePolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Sid": "",
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "glue.amazonaws.com"
+              },
+              "Action": "sts:AssumeRole",
+              "Condition": {
+                "StringEquals": {
+                  "sts:ExternalId": {
+                    "Ref": "AWS::AccountId"
+                  }
+                }
+              }
+            }
+          ]
+        }
+      }
+    },
+    "deliveryRole": {
+      "Type": "AWS::IAM::Role",
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Sid": "",
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "firehose.amazonaws.com"
+              },
+              "Action": "sts:AssumeRole",
+              "Condition": {
+                "StringEquals": {
+                  "sts:ExternalId": {
+                    "Ref": "AWS::AccountId"
+                  }
+                }
+              }
+            }
+          ]
+        }
+      }
+    },
+    "deliveryPolicy": {
+      "Type": "AWS::IAM::Policy",
+      "Properties": {
+        "PolicyName": { "Fn::Sub": "${AWS::StackName}-FirehoseDeliveryPolicy" },
+        "PolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Effect": "Allow",
+              "Action": [
+                "s3:AbortMultipartUpload",
+                "s3:GetBucketLocation",
+                "s3:GetObject",
+                "s3:ListBucket",
+                "s3:ListBucketMultipartUploads",
+                "s3:PutObject"
+              ],
+              "Resource": [
+                {
+                  "Fn::Join": [
+                    "",
+                    [
+                      "arn:aws:s3:::",
+                      {
+                        "Ref": "s3bucket"
+                      }
+                    ]
+                  ]
+                },
+                {
+                  "Fn::Join": [
+                    "",
+                    [
+                      "arn:aws:s3:::",
+                      {
+                        "Ref": "s3bucket"
+                      },
+                      "*"
+                    ]
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        "Roles": [
+          {
+            "Ref": "deliveryRole"
+          },
+          {
+            "Ref": "crawlerRole"
+          }
+        ]
+      }
+    }
+  }
 }

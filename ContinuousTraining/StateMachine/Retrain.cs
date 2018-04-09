@@ -68,12 +68,14 @@ namespace ContinuousTraining.StateMachine
                 {
                     Names = new List<string>
                     {
-                        "/CT/BucketName", "/CT/SageMakerRole"
+                        "/CT/BucketName", "/CT/SageMakerRole", "/CT/SageMakerContainer"
                     }
                 });
 
                 var defaultBucketName = result.Parameters.Single(p=>p.Name=="/CT/BucketName").Value;
                 var sageMakerRole = result.Parameters.Single(p => p.Name == "/CT/SageMakerRole").Value;
+                var sageMakerContainer =
+                    result.Parameters.Single(p => p.Name == "/CT/SageMakerTrainingContainer").Value;
 
                 if (string.IsNullOrEmpty(context.QueryExecutionBucket))
                 context.QueryExecutionBucket = defaultBucketName;
@@ -85,6 +87,8 @@ namespace ContinuousTraining.StateMachine
                     context.TrainingBucketName = defaultBucketName;
                 if (string.IsNullOrEmpty(context.TrainingRoleArn))
                     context.TrainingRoleArn = sageMakerRole;
+                if (string.IsNullOrEmpty(context.TrainingImage))
+                    context.TrainingImage = sageMakerContainer;
 
 
                 return context;
@@ -288,7 +292,6 @@ namespace ContinuousTraining.StateMachine
 
             public override async Task<Context> Execute(Context context)
             {
-                context.TrainingImage = "433757028032.dkr.ecr.us-west-2.amazonaws.com/xgboost:latest";
                 context.TrainingRoleArn = context.TrainingRoleArn;
                 context.TrainingJobName = $"{context.Symbol}-{context.QueryExecutionId}";
 
@@ -367,8 +370,8 @@ namespace ContinuousTraining.StateMachine
             }
         }
 
-        [FunctionMemory(Memory = 512)]
-        [FunctionTimeout(Timeout = 120)]
+        [FunctionMemory(Memory = 1024)]
+        [FunctionTimeout(Timeout = 240)]
         [DotStep.Core.Action(ActionName = "s3:*")]
         public sealed class StoreTrainingData : TaskState<Context, SubmitTrainingJob>
         {
