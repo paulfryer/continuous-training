@@ -44,7 +44,12 @@
 			"Properties": {
 				"Name": "/CT/SageMakerRole",
 				"Type": "String",
-				"Value": { "Fn::Sub": "${SageMakerRole}" },
+				"Value": {
+					"Fn::GetAtt": [
+						"SageMakerRole",
+						"Arn"
+					]
+				},
 				"Description": "The IAM Role ARN used to interact with the Sagemaker service."
 			}
 		},
