@@ -68,7 +68,7 @@ namespace ContinuousTraining.StateMachine
                 {
                     Names = new List<string>
                     {
-                        "/CT/BucketName", "/CT/SageMakerRole", "/CT/SageMakerContainer"
+                        "/CT/BucketName", "/CT/SageMakerRole", "/CT/SageMakerTrainingContainer"
                     }
                 });
 
