@@ -49,7 +49,8 @@ namespace Tests
         {
             var context = new Retrain.Context
             {
-                SearchTerm = "YouTube"
+                Symbol = "AMZN",
+                SearchTerm = "Amazon"
             };
 
             var engine = new StateMachineEngine<Retrain, Retrain.Context>(context);
@@ -90,7 +91,7 @@ namespace Tests
                 var start = DateTime.UtcNow.Subtract(TimeSpan.FromDays(7));
                 IIndexingService yahooFinanceService = new AlphaVantageIndexingService();
                 var stats = await yahooFinanceService.GetStatisticsAsync(start, end, symbol);
-                Assert.IsFalse(stats.Any());
+                Assert.IsTrue(stats.Any());
             }
 
         }

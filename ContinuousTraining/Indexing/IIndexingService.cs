@@ -27,7 +27,7 @@ namespace ContinuousTraining.Indexing
             var sb = new StringBuilder();
             sb.AppendLine("date,open,high,low,close,volume");
             foreach (var stat in statistics)
-                sb.AppendLine($"{stat.Date},{stat.Open},{stat.High},{stat.Low},{stat.Close},{stat.Volume}");
+                sb.AppendLine($"{stat.Date.ToString("yyyy-MM-dd")},{stat.Open},{stat.High},{stat.Low},{stat.Close},{stat.Volume}");
 
             return sb.ToString();
         }

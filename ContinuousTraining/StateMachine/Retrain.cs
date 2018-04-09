@@ -23,8 +23,12 @@ namespace ContinuousTraining.StateMachine
     {
         public class Context : IContext
         {
+
             [Required]
             public string SearchTerm { get; set; }
+
+            [Required]
+            public string Symbol { get; set; }
 
             public string TableName { get; set; }
 
@@ -38,6 +42,7 @@ namespace ContinuousTraining.StateMachine
 
             public string TrainingJobName { get; set; }
             public string TrainingImage { get; set; }
+            [Required]
             public string TrainingRoleArn { get; set; }
             public string TrainingJobArn { get; set; }
             public string TrainingJobStatus { get; set; }
@@ -59,9 +64,16 @@ namespace ContinuousTraining.StateMachine
             private readonly IAmazonSimpleSystemsManagement ssm = new AmazonSimpleSystemsManagementClient();
             public override async Task<Context> Execute(Context context)
             {
-                var result = await ssm.GetParameterAsync(new GetParameterRequest { Name = "/CT/BucketName" });
+                var result = await ssm.GetParametersAsync(new GetParametersRequest
+                {
+                    Names = new List<string>
+                    {
+                        "/CT/BucketName", "/CT/SageMakerRole"
+                    }
+                });
 
-                var defaultBucketName = result.Parameter.Value;
+                var defaultBucketName = result.Parameters.Single(p=>p.Name=="/CT/BucketName").Value;
+                var sageMakerRole = result.Parameters.Single(p => p.Name == "/CT/SageMakerRole").Value;
 
                 if (string.IsNullOrEmpty(context.QueryExecutionBucket))
                 context.QueryExecutionBucket = defaultBucketName;
@@ -71,6 +83,9 @@ namespace ContinuousTraining.StateMachine
 
                 if (string.IsNullOrEmpty(context.TrainingBucketName))
                     context.TrainingBucketName = defaultBucketName;
+                if (string.IsNullOrEmpty(context.TrainingRoleArn))
+                    context.TrainingRoleArn = sageMakerRole;
+
 
                 return context;
             }
@@ -196,10 +211,10 @@ namespace ContinuousTraining.StateMachine
                 {
                     var result = await sageMaker.DescribeEndpointAsync(new DescribeEndpointRequest
                     {
-                        EndpointName = context.SearchTerm
+                        EndpointName = context.Symbol
                     });
 
-                    if (result.EndpointName == context.SearchTerm)
+                    if (result.EndpointName == context.Symbol)
                         context.EndpointExists = true;
                     else context.EndpointExists = false;
                 }
@@ -233,7 +248,7 @@ namespace ContinuousTraining.StateMachine
             {
                 var result = await sageMaker.CreateEndpointAsync(new CreateEndpointRequest
                 {
-                    EndpointName = context.SearchTerm,
+                    EndpointName = context.Symbol,
                     EndpointConfigName = context.TrainingJobName
                 });
 
@@ -254,7 +269,7 @@ namespace ContinuousTraining.StateMachine
             {
                 var result = await sageMaker.UpdateEndpointAsync(new UpdateEndpointRequest
                 {
-                    EndpointName = context.SearchTerm,
+                    EndpointName = context.Symbol,
                     EndpointConfigName = context.TrainingJobName
                 });
 
@@ -275,7 +290,7 @@ namespace ContinuousTraining.StateMachine
             {
                 context.TrainingImage = "433757028032.dkr.ecr.us-west-2.amazonaws.com/xgboost:latest";
                 context.TrainingRoleArn = context.TrainingRoleArn;
-                context.TrainingJobName = $"{context.SearchTerm}-{context.QueryExecutionId}";
+                context.TrainingJobName = $"{context.Symbol}-{context.QueryExecutionId}";
 
                 var result = await sageMaker.CreateTrainingJobAsync(new CreateTrainingJobRequest
                 {
@@ -430,7 +445,7 @@ namespace ContinuousTraining.StateMachine
                 // TODO: need to build a price / index refernce import process. Start with yahoo finance.
 
                 var sqlBuilder = new StringBuilder();
-                sqlBuilder.AppendLine("SELECT (ix1.price - ix.price) / ix.price,");
+                sqlBuilder.AppendLine("SELECT (ix1.close - ix.close) / ix.close,");
                 var itemTableDefinition =
                     await glue.GetTableAsync(new GetTableRequest {DatabaseName = "extraction-database", Name = context.TableName});
                 var itemColumns = itemTableDefinition.Table.StorageDescriptor.Columns;
@@ -445,11 +460,11 @@ namespace ContinuousTraining.StateMachine
                     }
                 }
 
-                sqlBuilder.AppendLine($"FROM \"tiger\".\"{context.TableName}\" i");
+                sqlBuilder.AppendLine($"FROM \"extraction-database\".\"{context.TableName}\" i");
                 sqlBuilder.AppendLine(
-                    $"JOIN \"tiger\".\"indexes\" ix ON ix.index = '{context.SearchTerm}' AND i.date = concat(ix.date, 'T00:00:00Z')");
+                    $"JOIN \"extraction-database\".\"index\" ix ON ix.symbol = '{context.Symbol}' AND i.date = concat(ix.date, 'T00:00:00Z')");
                 sqlBuilder.AppendLine(
-                    $"JOIN \"tiger\".\"indexes\" ix1  ON ix1.index = '{context.SearchTerm}' AND date_add('day', 1, date(replace(i.date, 'T00:00:00Z', ''))) = date(ix1.date)");
+                    $"JOIN \"extraction-database\".\"index\" ix1  ON ix1.symbol = '{context.Symbol}' AND date_add('day', 1, date(replace(i.date, 'T00:00:00Z', ''))) = date(ix1.date)");
 
                 var sql = sqlBuilder.ToString();
 
@@ -512,7 +527,7 @@ namespace ContinuousTraining.StateMachine
                     },
                     ResultConfiguration = new ResultConfiguration
                     {
-                        OutputLocation = $"s3://{context.QueryExecutionBucket}/"
+                        OutputLocation = $"s3://{context.QueryExecutionBucket}/athena/"
                     }
                 });
 
@@ -577,7 +592,7 @@ namespace ContinuousTraining.StateMachine
                         {
                             Compressed = true,
                             Columns = columns,
-                            Location = $"s3://{context.TrainingBucketName}/item/",
+                            Location = $"s3://{context.TrainingBucketName}/ingest/item/",
                             InputFormat = "org.apache.hadoop.mapred.TextInputFormat",
                             OutputFormat = "org.apache.hadoop.hive.ql.io.HiveIgnoreKeyTextOutputFormat",
                             SerdeInfo = new SerDeInfo

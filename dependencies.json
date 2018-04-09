@@ -39,7 +39,15 @@
 				"Description": "The bucket name used for the CT project."
 			}
 		},
-
+		"SageMakerRoleParameter": {
+			"Type": "AWS::SSM::Parameter",
+			"Properties": {
+				"Name": "/CT/SageMakerRole",
+				"Type": "String",
+				"Value": { "Fn::Sub": "${SageMakerRole}" },
+				"Description": "The IAM Role ARN used to interact with the Sagemaker service."
+			}
+		},
 		"GlueCrawler": {
 			"DependsOn": [
 				"deliveryPolicy"
@@ -140,6 +148,25 @@
 			"Type": "AWS::S3::Bucket",
 			"Properties": {
 				"BucketName": { "Fn::Sub": "${AWS::Region}-${AWS::StackName}-${AWS::AccountId}" }
+			}
+		},
+		"SageMakerRole": {
+			"Type": "AWS::IAM::Role",
+			"Properties": {
+				"ManagedPolicyArns": [ "arn:aws:iam::aws:policy/AmazonSageMakerFullAccess" ],
+				"AssumeRolePolicyDocument": {
+					"Version": "2012-10-17",
+					"Statement": [
+						{
+							"Sid": "",
+							"Effect": "Allow",
+							"Principal": {
+								"Service": "sagemaker.amazonaws.com"
+							},
+							"Action": "sts:AssumeRole"
+						}
+					]
+				}
 			}
 		},
 		"crawlerRole": {
