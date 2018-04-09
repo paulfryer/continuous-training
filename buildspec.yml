@@ -8,7 +8,7 @@ phases:
     commands:
       - dotnet new console --name Builder
       - sed -i 's/Console.WriteLine("Hello World!")/DotStep.Builder.DotStepBuilder.BuildTemplate(args[0])/g' Builder/Program.cs
-      - cd Builder && dotnet add package DotStep.Builder && dotnet add package DotStep.Core && dotnet build && dotnet bin/Debug/netcoreapp2.0/Builder.dll ../ContinuousTraining/bin/Debug/netcoreapp2.0/
+      - cd Builder && dotnet add package DotStep.Builder && dotnet add package DotStep.Common && dotnet build && dotnet bin/Debug/netcoreapp2.0/Builder.dll ../ContinuousTraining/bin/Debug/netcoreapp2.0/
 artifacts:
   files:
     - ContinuousTraining/bin/release/netcoreapp2.0/publish/**/*
