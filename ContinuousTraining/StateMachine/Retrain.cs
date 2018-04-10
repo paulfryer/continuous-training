@@ -517,6 +517,7 @@ namespace ContinuousTraining.StateMachine
         [DotStep.Core.Action(ActionName = "athena:*")]
         [DotStep.Core.Action(ActionName = "glue:*")]
         [DotStep.Core.Action(ActionName = "dynamodb:*")]
+        [DotStep.Core.Action(ActionName = "s3:*")]
         public sealed class CreateTable : TaskState<Context, SubmitQuery>
         {
             private readonly IAmazonAthena athena = new AmazonAthenaClient();

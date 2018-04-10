@@ -57,7 +57,7 @@ namespace Tests
             await engine.Start();
 
             // if we made it this far, it worked.
-            Assert.IsTrue(true);
+            Assert.IsTrue(context.PredictedValue != 0);
         }
 
         [TestMethod]

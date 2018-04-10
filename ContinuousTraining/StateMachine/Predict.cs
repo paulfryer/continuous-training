@@ -26,6 +26,7 @@ namespace ContinuousTraining.StateMachine
         {
             public string Symbol {get;set;}
             public string Url { get; set; }
+            public decimal PredictedValue { get; set; }
         }
 
         [DotStep.Core.Action(ActionName = "ssm:*")]
@@ -56,14 +57,23 @@ namespace ContinuousTraining.StateMachine
 
 
                 var sb = new StringBuilder();
-                foreach (var entity in entities)
+                var first = true;
+                foreach (var column in columns)
+                //foreach (var entity in entities)
                 {
-                    var name = Extractor.ExtractEntities.MakeAttributeName(entity.Provider, entity.Type, entity.Name);
-                    var value = Convert.ToInt32(10000 * Convert.ToDecimal(entity.Score));
-                    sb.Append(columns.Contains(name) ? value : 0);
+                    if (!first)
+                        sb.Append(",");
+                    first = false;
+
+                    var entity = entities.FirstOrDefault(e =>
+                        Extractor.ExtractEntities.MakeAttributeName(e.Provider, e.Type, e.Name) == column);
+
+                    sb.Append(entity == null ? 0 : Convert.ToInt32(10000 * Convert.ToDecimal(entity.Score)));
                 }
 
                 var csv = sb.ToString();
+
+                string stringResult;
 
                 using (var stream = GenerateStreamFromString(csv))
                 {
@@ -75,12 +85,15 @@ namespace ContinuousTraining.StateMachine
                         //Accept = "text/csv"
                     });
 
-                    //result.
+                    using (var reader = new StreamReader(result.Body))
+                        stringResult = reader.ReadToEnd();
+
                 }
 
+                context.PredictedValue = Convert.ToDecimal(stringResult);
 
 
-                throw new System.NotImplementedException();
+                return context;
             }
 
             
