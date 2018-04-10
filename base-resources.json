@@ -20,6 +20,28 @@
     }
   },
   "Resources": {
+    "SchemaTable": {
+      "Type": "AWS::DynamoDB::Table",
+      "Properties": {
+        "AttributeDefinitions": [
+          {
+            "AttributeName": "symbol",
+            "AttributeType": "S"
+          }
+        ],
+        "KeySchema": [
+          {
+            "AttributeName": "symbol",
+            "KeyType": "HASH"
+          }
+        ],
+        "ProvisionedThroughput": {
+          "ReadCapacityUnits": "1",
+          "WriteCapacityUnits": "1"
+        },
+        "TableName": "symbol-schema"
+      }
+    },
     "SageMakerTrainingContainer": {
       "Type": "AWS::SSM::Parameter",
       "Properties": {

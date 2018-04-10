@@ -43,6 +43,22 @@ namespace Tests
             Assert.IsTrue(true);
         }
 
+        [TestMethod]
+        public async Task PredictTest()
+        {
+            var context = new Predict.Context
+            {
+                Symbol = "AMZN",
+                Url = "https://www.cnbc.com/2018/04/09/billionaire-mall-owner-amazon-has-been-great-for-retail.html"
+            };
+
+            var engine = new StateMachineEngine<Predict, Predict.Context>(context);
+
+            await engine.Start();
+
+            // if we made it this far, it worked.
+            Assert.IsTrue(true);
+        }
 
         [TestMethod]
         public async Task RetrainStateMachine()

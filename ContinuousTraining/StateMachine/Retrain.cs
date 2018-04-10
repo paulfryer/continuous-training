@@ -6,6 +6,8 @@ using System.Text;
 using System.Threading.Tasks;
 using Amazon.Athena;
 using Amazon.Athena.Model;
+using Amazon.DynamoDBv2;
+using Amazon.DynamoDBv2.Model;
 using Amazon.Glue;
 using Amazon.Glue.Model;
 using Amazon.S3;
@@ -16,6 +18,7 @@ using Amazon.SimpleSystemsManagement;
 using Amazon.SimpleSystemsManagement.Model;
 using DotStep.Common.Functions;
 using DotStep.Core;
+using CreateTableRequest = Amazon.Glue.Model.CreateTableRequest;
 
 namespace ContinuousTraining.StateMachine
 {
@@ -23,27 +26,26 @@ namespace ContinuousTraining.StateMachine
     {
         public class Context : IContext
         {
+            [Required] public string SearchTerm { get; set; }
 
-            [Required]
-            public string SearchTerm { get; set; }
-
-            [Required]
-            public string Symbol { get; set; }
+            [Required] public string Symbol { get; set; }
 
             public string TableName { get; set; }
 
             public string QueryExecutionId { get; set; }
-            [Required]
-            public string ResultsBucketName { get; set; }
-            [Required]
-            public string TrainingBucketName { get; set; }
+
+            [Required] public string ResultsBucketName { get; set; }
+
+            [Required] public string TrainingBucketName { get; set; }
+
             public string TrainingKeyName { get; set; }
             public string ValidationKeyName { get; set; }
 
             public string TrainingJobName { get; set; }
             public string TrainingImage { get; set; }
-            [Required]
-            public string TrainingRoleArn { get; set; }
+
+            [Required] public string TrainingRoleArn { get; set; }
+
             public string TrainingJobArn { get; set; }
             public string TrainingJobStatus { get; set; }
 
@@ -54,31 +56,34 @@ namespace ContinuousTraining.StateMachine
             public bool EndpointExists { get; set; }
 
             public string EndpointArn { get; set; }
-            [Required]
-            public string QueryExecutionBucket { get; set; }
+
+            [Required] public string QueryExecutionBucket { get; set; }
         }
 
         [DotStep.Core.Action(ActionName = "ssm:*")]
         public sealed class SetDefaults : TaskState<Context, Validate>
         {
             private readonly IAmazonSimpleSystemsManagement ssm = new AmazonSimpleSystemsManagementClient();
+
             public override async Task<Context> Execute(Context context)
             {
                 var result = await ssm.GetParametersAsync(new GetParametersRequest
                 {
                     Names = new List<string>
                     {
-                        "/CT/BucketName", "/CT/SageMakerRole", "/CT/SageMakerTrainingContainer"
+                        "/CT/BucketName",
+                        "/CT/SageMakerRole",
+                        "/CT/SageMakerTrainingContainer"
                     }
                 });
 
-                var defaultBucketName = result.Parameters.Single(p=>p.Name=="/CT/BucketName").Value;
+                var defaultBucketName = result.Parameters.Single(p => p.Name == "/CT/BucketName").Value;
                 var sageMakerRole = result.Parameters.Single(p => p.Name == "/CT/SageMakerRole").Value;
                 var sageMakerContainer =
                     result.Parameters.Single(p => p.Name == "/CT/SageMakerTrainingContainer").Value;
 
                 if (string.IsNullOrEmpty(context.QueryExecutionBucket))
-                context.QueryExecutionBucket = defaultBucketName;
+                    context.QueryExecutionBucket = defaultBucketName;
 
                 if (string.IsNullOrEmpty(context.ResultsBucketName))
                     context.ResultsBucketName = defaultBucketName;
@@ -177,7 +182,7 @@ namespace ContinuousTraining.StateMachine
         [DotStep.Core.Action(ActionName = "iam:*")]
         public sealed class CreateEndpointConfiguration : TaskState<Context, GetEndpoint>
         {
-            readonly IAmazonSageMaker sageMaker = new AmazonSageMakerClient();
+            private readonly IAmazonSageMaker sageMaker = new AmazonSageMakerClient();
 
             public override async Task<Context> Execute(Context context)
             {
@@ -207,7 +212,7 @@ namespace ContinuousTraining.StateMachine
         [DotStep.Core.Action(ActionName = "iam:*")]
         public sealed class GetEndpoint : TaskState<Context, DetermineIfEndpointExists>
         {
-            readonly IAmazonSageMaker sageMaker = new AmazonSageMakerClient();
+            private readonly IAmazonSageMaker sageMaker = new AmazonSageMakerClient();
 
             public override async Task<Context> Execute(Context context)
             {
@@ -246,7 +251,7 @@ namespace ContinuousTraining.StateMachine
         [DotStep.Core.Action(ActionName = "iam:*")]
         public sealed class CreateEndpoint : TaskState<Context, Done>
         {
-            readonly IAmazonSageMaker sageMaker = new AmazonSageMakerClient();
+            private readonly IAmazonSageMaker sageMaker = new AmazonSageMakerClient();
 
             public override async Task<Context> Execute(Context context)
             {
@@ -267,7 +272,7 @@ namespace ContinuousTraining.StateMachine
         [DotStep.Core.Action(ActionName = "iam:*")]
         public sealed class UpdateEndpoint : TaskState<Context, Done>
         {
-            readonly IAmazonSageMaker sageMaker = new AmazonSageMakerClient();
+            private readonly IAmazonSageMaker sageMaker = new AmazonSageMakerClient();
 
             public override async Task<Context> Execute(Context context)
             {
@@ -288,7 +293,7 @@ namespace ContinuousTraining.StateMachine
         [DotStep.Core.Action(ActionName = "iam:*")]
         public sealed class SubmitTrainingJob : TaskState<Context, CheckTrainingStatus>
         {
-            readonly IAmazonSageMaker sageMaker = new AmazonSageMakerClient();
+            private readonly IAmazonSageMaker sageMaker = new AmazonSageMakerClient();
 
             public override async Task<Context> Execute(Context context)
             {
@@ -439,18 +444,21 @@ namespace ContinuousTraining.StateMachine
         [DotStep.Core.Action(ActionName = "s3:*")]
         public sealed class SubmitQuery : TaskState<Context, WaitForQueryToComplete>
         {
-            readonly IAmazonAthena athena = new AmazonAthenaClient();
-            readonly IAmazonGlue glue = new AmazonGlueClient();
+            private readonly IAmazonAthena athena = new AmazonAthenaClient();
+            private readonly IAmazonGlue glue = new AmazonGlueClient();
 
             public override async Task<Context> Execute(Context context)
             {
-
                 // TODO: need to build a price / index refernce import process. Start with yahoo finance.
 
                 var sqlBuilder = new StringBuilder();
                 sqlBuilder.AppendLine("SELECT (ix1.close - ix.close) / ix.close,");
                 var itemTableDefinition =
-                    await glue.GetTableAsync(new GetTableRequest {DatabaseName = "extraction-database", Name = context.TableName});
+                    await glue.GetTableAsync(new GetTableRequest
+                    {
+                        DatabaseName = "extraction-database",
+                        Name = context.TableName
+                    });
                 var itemColumns = itemTableDefinition.Table.StorageDescriptor.Columns;
                 var colIndex = 0;
                 foreach (var column in itemColumns)
@@ -508,10 +516,11 @@ namespace ContinuousTraining.StateMachine
 
         [DotStep.Core.Action(ActionName = "athena:*")]
         [DotStep.Core.Action(ActionName = "glue:*")]
-        [DotStep.Core.Action(ActionName = "s3:*")]
+        [DotStep.Core.Action(ActionName = "dynamodb:*")]
         public sealed class CreateTable : TaskState<Context, SubmitQuery>
         {
             private readonly IAmazonAthena athena = new AmazonAthenaClient();
+            private readonly IAmazonDynamoDB dynamo = new AmazonDynamoDBClient();
             private readonly IAmazonGlue glue = new AmazonGlueClient();
 
             public override async Task<Context> Execute(Context context)
@@ -536,6 +545,7 @@ namespace ContinuousTraining.StateMachine
 
                 await Task.WhenAll(result, Task.Delay(TimeSpan.FromSeconds(15)));
 
+                var latestPredictionProperties = new List<string>();
 
                 var columns = new List<Column>
                 {
@@ -566,15 +576,19 @@ namespace ContinuousTraining.StateMachine
                 result2.ResultSet.Rows.RemoveAt(0);
 
                 foreach (var row in result2.ResultSet.Rows)
+                {
+                    var columnName = row.Data[0].VarCharValue;
+                    latestPredictionProperties.Add(columnName);
                     columns.Add(new Column
                     {
-                        Name = $"{row.Data[0].VarCharValue}",
+                        Name = columnName,
                         Type = "int"
                     });
+                }
 
                 var serdePaths = string.Join(',', columns.Select(c => c.Name));
 
-                var result3 = await glue.CreateTableAsync(new CreateTableRequest
+                var createTableTask = glue.CreateTableAsync(new CreateTableRequest
                 {
                     DatabaseName = "extraction-database",
 
@@ -609,6 +623,27 @@ namespace ContinuousTraining.StateMachine
                         }
                     }
                 });
+                var putTask = dynamo.PutItemAsync(new PutItemRequest
+                {
+                    TableName = "symbol-schema",
+                    Item = new Dictionary<string, AttributeValue>
+                    {
+                        {
+                            "symbol", new AttributeValue
+                            {
+                                S = context.Symbol
+                            }
+                        },
+                        {
+                            "schema", new AttributeValue
+                            {
+                                SS = latestPredictionProperties
+                            }
+                        }
+                    }
+                });
+
+                await Task.WhenAll(createTableTask, putTask);
 
                 return context;
             }
