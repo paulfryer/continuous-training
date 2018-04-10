@@ -49,7 +49,8 @@ namespace Tests
             var context = new Predict.Context
             {
                 Symbol = "AMZN",
-                Url = "https://www.cnbc.com/2018/04/09/billionaire-mall-owner-amazon-has-been-great-for-retail.html"
+                //Url = "https://www.cnbc.com/2018/04/09/billionaire-mall-owner-amazon-has-been-great-for-retail.html"
+                Url = "http://www.chicagotribune.com/news/local/politics/ct-met-amazon-chicago-housing-protesters-20180410-story.html"
             };
 
             var engine = new StateMachineEngine<Predict, Predict.Context>(context);
