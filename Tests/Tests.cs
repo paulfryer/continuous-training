@@ -83,7 +83,7 @@ namespace Tests
         {
             var context = new Extractor.Context
             {
-                SearchTerm = "YouTube",
+                SearchTerm = "Amazon",
                 SearchDate = DateTime.UtcNow.Subtract(TimeSpan.FromDays(2))
             };
 
@@ -128,10 +128,10 @@ namespace Tests
 
 
             [TestMethod]
-            public async Task TestDiffbot()
+            public async Task TestTextExtraction()
             {
-                ITextExtractor extractor = new DiffbotTextExtractor();
-                var result = await extractor.ExtractText(new Uri("http://www.cnn.com"));
+                ITextExtractor extractor = new HtmlAgilityExtractor();
+                var result = await extractor.ExtractText(new Uri("https://www.newyorker.com/news/daily-comment/what-trumps-fight-with-amazon-signals-for-american-business"));
                 Assert.IsTrue(result.Length > 0);
             }
         }

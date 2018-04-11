@@ -108,7 +108,7 @@ namespace ContinuousTraining.StateMachine
         [DotStep.Core.Action(ActionName = "ssm:GetParameter")]
         public sealed class ExtractContent : TaskState<Context, ExtractEntities>
         {
-            private readonly ITextExtractor textExtractor = new DiffbotTextExtractor();
+            private readonly ITextExtractor textExtractor = new HtmlAgilityExtractor(); //new DiffbotTextExtractor();
 
             public override async Task<Context> Execute(Context @event)
             {

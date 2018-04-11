@@ -325,10 +325,10 @@ namespace ContinuousTraining.StateMachine
                     },
                     HyperParameters = new Dictionary<string, string>
                     {
-                        {"max_depth", "10"},
-                        {"eta", "0.2"},
-                        {"gamma", "4"},
-                        {"min_child_weight", "1"},
+                        {"max_depth", "1000"},
+                        {"eta", "0.001"},
+                        //{"gamma", "4"},
+                        {"min_child_weight", "10"},
                         {"subsample", "0.7"},
                         {"silent", "0"},
                         {"objective", "reg:linear"},
