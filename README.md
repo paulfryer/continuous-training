@@ -27,3 +27,5 @@ Once the data is on S3 a Glue crawler will build shemas for the data so they can
 The "Retrain" function will trigger the crawler to add any new partitions, build training data, and submit a training job to Sagemaker. Finally the new model will be published to a Sagemaker prediction endpoint. 
 
 Now you can send the extracted entities of a news articles to Sagemaker to get a prediction of how the stock price for a company will behave in 1 day, based on the characterizations of the extracted entities.
+
+3) After you have trained a model and a SageMaker endpoint is deployed you can run a new news story through the "Predict" function to see what the model thinks the 1 day stock price change will be based on the entities/confidence scores extracted from that article. Submit the "Symbol" and "SearchTerm" parameters to this function. Note: as of Aprill 11th, 2018 the predicted value coming back is always the same - seems the XGBoost algorithm needs some tuning, I suspect the inital branch is always going down one path that ends with the same value.
