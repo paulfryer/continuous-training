@@ -35,7 +35,7 @@ namespace ContinuousTraining.StateMachine
         [DotStep.Core.Action(ActionName = "dynamodb:*")]
         public class ExtractText : TaskState<Context, Done>
         {
-            private readonly ITextExtractor textExtractor = new DiffbotTextExtractor();
+            private readonly ITextExtractor textExtractor = new HtmlAgilityExtractor(); // //new DiffbotTextExtractor();
             private readonly IEntityExtractor entityExtractor = new AmazonEntityExtractor();
             private readonly IAmazonSageMakerRuntime sageMakerRuntime = new AmazonSageMakerRuntimeClient();
             private readonly IAmazonDynamoDB dynamo = new AmazonDynamoDBClient();
