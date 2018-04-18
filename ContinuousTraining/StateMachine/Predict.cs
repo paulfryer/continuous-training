@@ -73,7 +73,7 @@ namespace ContinuousTraining.StateMachine
 
                 var csv = String.Join(',', values.ToArray(), 0, values.Count);
 
-                var libsvm = formatter.ToLibSvm(new List<string>{csv}, true);
+                var libsvm = formatter.ToLibSvm(new List<string>{csv}, false);
                 using (var stream = GenerateStreamFromString(libsvm))
                 {
                     try

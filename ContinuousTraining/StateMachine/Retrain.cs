@@ -327,7 +327,7 @@ namespace ContinuousTraining.StateMachine
                     },
                     StoppingCondition = new StoppingCondition
                     {
-                        MaxRuntimeInSeconds = 2000
+                        MaxRuntimeInSeconds = Convert.ToInt32(TimeSpan.FromHours(1).TotalSeconds)
                     },
                     HyperParameters = new Dictionary<string, string>
                     {

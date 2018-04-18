@@ -16,7 +16,7 @@ namespace ContinuousTraining.Formatting
             validation = ToLibSvm(validationSet);
         }
 
-        public string ToLibSvm(List<string> inputSet, bool includePrediction = true)
+        public string ToLibSvm(List<string> inputSet, bool removeZeroIndexes = false)
         {
             var sb = new StringBuilder();
 
@@ -37,8 +37,8 @@ namespace ContinuousTraining.Formatting
                 for (var i = 0; i < values.Length; i++)
                 {
                     var value = values[i];
-                    if (value != "0")
-                        sb.Append($" {i + 1}:{value}");
+                    if (value == "0" && removeZeroIndexes) continue;
+                    sb.Append($" {i + 1}:{value}");
                 }
 
                 sb.AppendLine();
