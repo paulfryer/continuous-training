@@ -14,6 +14,7 @@ using Amazon.SageMakerRuntime;
 using Amazon.SageMakerRuntime.Model;
 using ContinuousTraining.EntityExtraction;
 using ContinuousTraining.EntityExtraction.ContinuousTraining.EntityExtractors;
+using ContinuousTraining.Formatting;
 using ContinuousTraining.TextExtraction;
 using DotStep.Core;
 using Newtonsoft.Json;
@@ -56,41 +57,48 @@ namespace ContinuousTraining.StateMachine
                 var columns = itemResult.Item["schema"].SS;
 
 
-                var sb = new StringBuilder();
-                var first = true;
-                foreach (var column in columns)
-                //foreach (var entity in entities)
-                {
-                    if (!first)
-                        sb.Append(",");
-                    first = false;
 
+                var formatter = new LibsvmFormatter();
+
+                var values = new List<string>{"0.000000000"};
+                foreach (var column in columns)
+                {
                     var entity = entities.FirstOrDefault(e =>
                         Extractor.ExtractEntities.MakeAttributeName(e.Provider, e.Type, e.Name) == column);
-
-                    sb.Append(entity == null ? 0 : Convert.ToInt32(10000 * Convert.ToDecimal(entity.Score)));
+                    var score = entity == null ? 0 : Convert.ToInt32(10000 * Convert.ToDecimal(entity.Score));
+                    values.Add(Convert.ToString(score));
                 }
-
-                var csv = sb.ToString();
 
                 string stringResult;
 
-                using (var stream = GenerateStreamFromString(csv))
-                {
-                    var result = await sageMakerRuntime.InvokeEndpointAsync(new InvokeEndpointRequest
-                    {
-                        EndpointName = context.Symbol,
-                        ContentType = "text/csv",
-                        Body = stream,
-                        //Accept = "text/csv"
-                    });
+                var csv = String.Join(',', values.ToArray(), 0, values.Count);
 
-                    using (var reader = new StreamReader(result.Body))
-                        stringResult = reader.ReadToEnd();
+                var libsvm = formatter.ToLibSvm(new List<string>{csv}, true);
+                using (var stream = GenerateStreamFromString(libsvm))
+                {
+                    try
+                    {
+                        var result = await sageMakerRuntime.InvokeEndpointAsync(new InvokeEndpointRequest
+                        {
+                            EndpointName = context.Symbol,
+                            ContentType = formatter.ContentType,
+                            Body = stream,
+                            //Accept = "text/csv"
+                        });
+
+                        using (var reader = new StreamReader(result.Body))
+                            stringResult = reader.ReadToEnd();
+
+                        context.PredictedValue = Convert.ToDecimal(stringResult);
+                    }
+                    catch (Exception e)
+                    {
+                        Console.Write(e);
+                    }
 
                 }
 
-                context.PredictedValue = Convert.ToDecimal(stringResult);
+                
 
 
                 return context;

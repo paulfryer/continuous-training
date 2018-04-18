@@ -48,9 +48,10 @@ namespace Tests
         {
             var context = new Predict.Context
             {
-                Symbol = "AMZN",
+                Symbol = "FB",
+                Url = "https://www.nytimes.com/2018/04/11/technology/facebook-privacy-hearings.html"
                 //Url = "https://www.cnbc.com/2018/04/09/billionaire-mall-owner-amazon-has-been-great-for-retail.html"
-                Url = "http://www.chicagotribune.com/news/local/politics/ct-met-amazon-chicago-housing-protesters-20180410-story.html"
+                //Url = "http://www.chicagotribune.com/news/local/politics/ct-met-amazon-chicago-housing-protesters-20180410-story.html"
             };
 
             var engine = new StateMachineEngine<Predict, Predict.Context>(context);
@@ -66,8 +67,8 @@ namespace Tests
         {
             var context = new Retrain.Context
             {
-                Symbol = "AMZN",
-                SearchTerm = "Amazon"
+                Symbol = "FB",
+                SearchTerm = "Facebook"
             };
 
             var engine = new StateMachineEngine<Retrain, Retrain.Context>(context);

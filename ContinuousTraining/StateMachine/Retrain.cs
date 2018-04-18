@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
 using Amazon.Athena;
@@ -16,6 +17,7 @@ using Amazon.SageMaker;
 using Amazon.SageMaker.Model;
 using Amazon.SimpleSystemsManagement;
 using Amazon.SimpleSystemsManagement.Model;
+using ContinuousTraining.Formatting;
 using DotStep.Common.Functions;
 using DotStep.Core;
 using CreateTableRequest = Amazon.Glue.Model.CreateTableRequest;
@@ -58,6 +60,8 @@ namespace ContinuousTraining.StateMachine
             public string EndpointArn { get; set; }
 
             [Required] public string QueryExecutionBucket { get; set; }
+
+            [Required] public string DataFormat {get;set;}
         }
 
         [DotStep.Core.Action(ActionName = "ssm:*")]
@@ -95,6 +99,8 @@ namespace ContinuousTraining.StateMachine
                 if (string.IsNullOrEmpty(context.TrainingImage))
                     context.TrainingImage = sageMakerContainer;
 
+                if (string.IsNullOrEmpty(context.DataFormat))
+                    context.DataFormat = "libsvm";
 
                 return context;
             }
@@ -325,14 +331,13 @@ namespace ContinuousTraining.StateMachine
                     },
                     HyperParameters = new Dictionary<string, string>
                     {
-                        {"max_depth", "1000"},
-                        {"eta", "0.001"},
-                        //{"gamma", "4"},
-                        {"min_child_weight", "10"},
-                        {"subsample", "0.7"},
+                        {"max_depth", "6"},
+                        {"eta", "0.05"},
+                        {"min_child_weight", "3"},
+                        {"subsample", "0.8"},
                         {"silent", "0"},
                         {"objective", "reg:linear"},
-                        {"num_round", "50"}
+                        {"num_round", "200"}
                     },
                     InputDataConfig = new List<Channel>
                     {
@@ -340,7 +345,7 @@ namespace ContinuousTraining.StateMachine
                         {
                             ChannelName = "train",
                             CompressionType = CompressionType.None,
-                            ContentType = "csv",
+                            ContentType = context.DataFormat,
                             DataSource = new DataSource
                             {
                                 S3DataSource = new S3DataSource
@@ -355,7 +360,7 @@ namespace ContinuousTraining.StateMachine
                         {
                             ChannelName = "validation",
                             CompressionType = CompressionType.None,
-                            ContentType = "csv",
+                            ContentType = context.DataFormat,
                             DataSource = new DataSource
                             {
                                 S3DataSource = new S3DataSource
@@ -381,59 +386,56 @@ namespace ContinuousTraining.StateMachine
         public sealed class StoreTrainingData : TaskState<Context, SubmitTrainingJob>
         {
             private readonly IAmazonS3 s3 = new AmazonS3Client();
+            
+            private IDataFormatter formatter;
 
             public override async Task<Context> Execute(Context context)
             {
-                context.TrainingKeyName = "sagemaker/training.csv";
-                context.ValidationKeyName = "sagemaker/validation.csv";
+                switch (context.DataFormat)
+                {
+                    case "libsvm":
+                        formatter = new LibsvmFormatter();
+                        break;
+                    case "csv":
+                        formatter = new CsvFormatter();
+                        break;
+                    default:
+                        throw new Exception($"Unsupported data format: {context.DataFormat}.");
+                }
+
+                context.TrainingKeyName = $"sagemaker/training.{context.DataFormat}";
+                context.ValidationKeyName = $"sagemaker/validation.{context.DataFormat}";
 
                 var getResult = await s3.GetObjectAsync(new GetObjectRequest
                 {
                     BucketName = context.ResultsBucketName,
                     Key = $"{context.QueryExecutionId}.csv"
                 });
-
-
-                var reader = new StreamReader(getResult.ResponseStream);
-
-                var csv = await reader.ReadToEndAsync();
-
-                // TODO: randomize the order of the array
-
-                var n = 2;
-                var lines = csv
-                    .Split(Environment.NewLine.ToCharArray())
-                    .Skip(n)
-                    .ToArray();
-
-                var trainingLength = Convert.ToInt16(lines.Length * 0.7);
-                var validationLength = Convert.ToInt16(lines.Length - trainingLength);
-
-                var trainingSet = lines.Skip(0).Take(trainingLength);
-                var validationSet = lines.Skip(trainingLength).Take(validationLength);
-
-                var trainingCsv = string.Join(Environment.NewLine, trainingSet).Replace("\"", string.Empty);
-                var validationCsv = string.Join(Environment.NewLine, validationSet).Replace("\"", string.Empty);
+               
+                formatter.ProcessData(getResult.ResponseStream, out var training, out var validation);
 
                 var trainingUpload = s3.PutObjectAsync(new PutObjectRequest
                 {
                     BucketName = context.TrainingBucketName,
                     Key = context.TrainingKeyName,
-                    ContentBody = trainingCsv,
-                    ContentType = "text/csv"
+                    InputStream = training,
+                    ContentType = formatter.ContentType
                 });
+
+       
 
                 var validationUpload = s3.PutObjectAsync(new PutObjectRequest
                 {
                     BucketName = context.TrainingBucketName,
                     Key = context.ValidationKeyName,
-                    ContentBody = validationCsv,
-                    ContentType = "text/csv"
+                    InputStream = validation,
+                    ContentType = formatter.ContentType
                 });
 
                 await Task.WhenAll(trainingUpload, validationUpload);
 
-                reader.Dispose();
+                training.Dispose();
+                validation.Dispose();
 
                 return context;
             }
