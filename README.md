@@ -4,10 +4,10 @@ Used for continuous training of a Machine Learning model based on evolving data.
 Steps to use this project:
 
 1) Download and install the [base-resources.json](https://raw.githubusercontent.com/paulfryer/continuous-training/master/base-resources.json) cloud formation template. This will build out the base resources for the project, which consist of:
-  a. Kinesis Firehoses for entities extracted and items.
-  b. Glue crawlers for items, entities, and index data.
-  c. Roles for Sagemaker.
-  d. S3 bucket.
+1. Kinesis Firehoses for entities extracted and items.
+2. Glue crawlers for items, entities, and index data.
+3. Roles for Sagemaker.
+4. S3 bucket.
 
 This project uses [Diffbot](https://www.diffbot.com/get-started/) for text extraction from HTML, so you'll need to get a Diffbot Token.
 This project uses [Alpha Vantage](https://www.alphavantage.co/support/#api-key) for stock prices, so you'll need to get a API Key from them too.
@@ -16,9 +16,9 @@ This project uses [Alpha Vantage](https://www.alphavantage.co/support/#api-key) 
 
 ![Notice Names](Names.png)
 
-StackName = ct
-SourceCodeDirectory = continuous-training-master
-SourceCodeZip = https://codeload.github.com/paulfryer/continuous-training/zip/master
+* StackName = ct
+* SourceCodeDirectory = continuous-training-master
+* SourceCodeZip = https://codeload.github.com/paulfryer/continuous-training/zip/master
 
 This will import the source code into your own private git repository in CodeCommit. A CI/CD pipeline will be built to automatically deploy your code every time you check in. Let the CodePipeline complete and deploy your step functions via a new cloud formation template called "{stackname}-deplolyment".
 
