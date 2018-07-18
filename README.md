@@ -3,7 +3,7 @@ Used for continuous training of a Machine Learning model based on evolving data.
 
 Steps to use this project:
 
-1) Launch the base-resources.json cloud formation template. This will build out the base resources for the project, which consist of:
+1) Download the [base-resources.json](https://raw.githubusercontent.com/paulfryer/continuous-training/master/base-resources.json) cloud formation template. This will build out the base resources for the project, which consist of:
   a. Kinesis Firehoses for entities extracted and items.
   b. Glue crawlers for items, entities, and index data.
   c. Roles for Sagemaker.
