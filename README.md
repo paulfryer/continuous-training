@@ -26,6 +26,8 @@ The first step function you should run is the "Crawler". You need to provide two
 1) SearchTerm, this should be the company name you are searching for, like "Amazon"
 2) Symbol, this should be the stock symbol of the company you are searching for, like "AMZN"
 
+![example message](examplemessage.png)
+
 The crawler will kick off instances of the "Extractor" step function which will grab news articles about your search term and extract entities from it. The entities and news items are sent to Kinesis Firehoses and delivered to S3. 
 
 Once the data is on S3 a Glue crawler will build shemas for the data so they can be queries via Athena. 
