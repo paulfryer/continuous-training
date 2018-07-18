@@ -20,7 +20,7 @@ This project uses [Alpha Vantage](https://www.alphavantage.co/support/#api-key) 
 * SourceCodeDirectory = continuous-training-master
 * SourceCodeZip = https://codeload.github.com/paulfryer/continuous-training/zip/master
 
-This will import the source code into your own private git repository in CodeCommit. A CI/CD pipeline will be built to automatically deploy your code every time you check in. Let the CodePipeline complete and deploy your step functions via a new cloud formation template called "{stackname}-deplolyment".
+This will import the source code into your own private git repository in CodeCommit. A CI/CD pipeline will be built to automatically deploy your code every time you check in. Let the CodePipeline complete and deploy your step functions via a new cloud formation template called "{stackname}-deplolyment". This will take several minutes to build and deploy, you can view the CodePipeline to watch progress.
 
 The first step function you should run is the "Crawler". You need to provide two parameters to the step function:
 1) SearchTerm, this should be the company name you are searching for, like "Amazon"
