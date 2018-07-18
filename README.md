@@ -14,6 +14,8 @@ This project uses [Alpha Vantage](https://www.alphavantage.co/support/#api-key) 
 
 2) After you have launched the base template you can launch the [DotStep starter](https://github.com/paulfryer/dotstep#install-the-starter-project) cloud formation template, but replace all instances of "dotnet-starter" with "continuous-training" in the cloud formation parameters.
 
+![Notice Names](Names.png)
+
 This will import the source code into your own private git repository in CodeCommit. A CI/CD pipeline will be built to automatically deploy your code every time you check in. Let the CodePipeline complete and deploy your step functions via a new cloud formation template called "{stackname}-deplolyment".
 
 The first step function you should run is the "Crawler". You need to provide two parameters to the step function:
