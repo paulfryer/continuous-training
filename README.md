@@ -9,7 +9,7 @@ Steps to use this project:
 3. Roles for Sagemaker.
 4. S3 bucket.
 
-This project uses [Diffbot](https://www.diffbot.com/get-started/) for text extraction from HTML, so you'll need to get a Diffbot Token.
+This project can use [Diffbot](https://www.diffbot.com/get-started/) for text extraction from HTML, so you'll need to get a Diffbot Token if you choose to use this. There is another text extraction service that doesn't work as well, it's set as the default so you don't need to register with Diffbot if you are OK using this one. [Change implementation here](https://github.com/paulfryer/continuous-training/blob/master/ContinuousTraining/StateMachine/Extraction.cs#L111).
 This project uses [Alpha Vantage](https://www.alphavantage.co/support/#api-key) for stock prices, so you'll need to get a API Key from them too.
 
 2) After you have launched the base template you can launch the [DotStep starter](https://github.com/paulfryer/dotstep#install-the-starter-project) cloud formation template, but replace all instances of "dotnet-starter" with "continuous-training" in the cloud formation parameters.
