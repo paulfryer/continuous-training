@@ -1,5 +1,6 @@
 using System;
 using System.Linq;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using ContinuousTraining.EntityExtraction;
 using ContinuousTraining.EntityExtraction.ContinuousTraining.EntityExtractors;
@@ -8,9 +9,11 @@ using ContinuousTraining.StateMachine;
 using ContinuousTraining.TextExtraction;
 using DotStep.Core;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using static System.Net.Mime.MediaTypeNames;
 
 namespace Tests
 {
+
     [TestClass]
     public class StateMachines
     {
